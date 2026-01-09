@@ -214,7 +214,8 @@ function App() {
           </div>
 
           <div className="text-center text-gray-500 text-sm border-t border-white/10 pt-6">
-            <p>© {new Date().getFullYear()} Mayon Safety Initiative.</p>
+            <p>A project from <a href="https://bryan-web.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
+            <p className="mt-1">© {new Date().getFullYear()} Mayon Safety Initiative.</p>
             <p className="mt-1">
               Stay safe. Always follow official advisories from local authorities and PHIVOLCS.
             </p>
