@@ -122,10 +122,10 @@ function App() {
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
-                    href="tel:+63288426071"
+                    href="tel:+6328426146879"
                     className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-blue-400">Hotline:</span> (02) 8842-6071
+                    <span className="text-blue-400">Trunkline:</span> (02) 8426-1468 to 79
                   </a>
                 </li>
                 <li>
@@ -140,13 +140,41 @@ function App() {
                 </li>
                 <li>
                   <a
-                    href="https://www.facebook.com/ABORNCM"
+                    href="https://www.facebook.com/PHIVOLCS"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-blue-400">Facebook:</span> @ABOLCNCM
+                    <span className="text-blue-400">Facebook:</span> /PHIVOLCS
                   </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Mayon Volcano Observatory */}
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <h4 className="text-white font-semibold mb-3">Mayon Volcano Observatory</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="tel:+63528242383"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-blue-400">Hotline:</span> (052) 824-2383
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.phivolcs.dost.gov.ph/mayon-volcano-observatory/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-blue-400">Info:</span> MVO Page
+                  </a>
+                </li>
+                <li className="text-gray-500">
+                  Located at Ligñon Hill, Albay
                 </li>
               </ul>
             </div>
@@ -165,55 +193,20 @@ function App() {
                 </li>
                 <li>
                   <a
-                    href="tel:+63289121406"
-                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-rose-400">NDRRMC:</span> (02) 8912-1406
-                  </a>
-                </li>
-                <li>
-                  <a
                     href="tel:143"
                     className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
                   >
                     <span className="text-rose-400">Red Cross:</span> 143
                   </a>
                 </li>
-              </ul>
-            </div>
-
-            {/* Quick Links */}
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-              <h4 className="text-white font-semibold mb-3">Quick Links</h4>
-              <ul className="space-y-2 text-sm">
                 <li>
                   <a
-                    href="https://www.facebook.com/phaborncm"
+                    href="https://www.albay.gov.ph/contact/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
-                    PHIVOLCS Mayon Updates
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.facebook.com/AlbayPIO"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors"
-                  >
-                    Albay Public Information Office
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.facebook.com/ABORNCM"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors"
-                  >
-                    Albay PDRRMO
+                    <span className="text-blue-400">Albay Gov:</span> albay.gov.ph/contact
                   </a>
                 </li>
               </ul>
