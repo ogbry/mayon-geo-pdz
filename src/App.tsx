@@ -113,11 +113,119 @@ function App() {
           />
         </div>
 
-        <footer className="text-center text-gray-500 text-sm py-8">
-          <p>© {new Date().getFullYear()} Mayon Safety Initative.</p>
-          <p className="mt-1">
-            Stay safe. Always listen to local authorities and PHIVOLCS.
-          </p>
+        {/* Emergency Contacts & Resources */}
+        <footer className="border-t border-white/10 pt-8 pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* PHIVOLCS */}
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <h4 className="text-white font-semibold mb-3">PHIVOLCS</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="tel:+63288426071"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-blue-400">Hotline:</span> (02) 8842-6071
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.phivolcs.dost.gov.ph"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-blue-400">Website:</span> phivolcs.dost.gov.ph
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/ABORNCM"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-blue-400">Facebook:</span> @ABOLCNCM
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Emergency Hotlines */}
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <h4 className="text-white font-semibold mb-3">Emergency Hotlines</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="tel:911"
+                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-rose-400">National Emergency:</span> 911
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+63289121406"
+                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-rose-400">NDRRMC:</span> (02) 8912-1406
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:143"
+                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-rose-400">Red Cross:</span> 143
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Quick Links */}
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <h4 className="text-white font-semibold mb-3">Quick Links</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="https://www.facebook.com/phaborncm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    PHIVOLCS Mayon Updates
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/AlbayPIO"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    Albay Public Information Office
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/ABORNCM"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    Albay PDRRMO
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center text-gray-500 text-sm border-t border-white/10 pt-6">
+            <p>© {new Date().getFullYear()} Mayon Safety Initiative.</p>
+            <p className="mt-1">
+              Stay safe. Always follow official advisories from local authorities and PHIVOLCS.
+            </p>
+          </div>
         </footer>
       </div>
     </BackgroundLayout>
