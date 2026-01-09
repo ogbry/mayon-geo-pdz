@@ -4,11 +4,7 @@ import * as cheerio from "cheerio";
 // URLs to scrape for alert level
 const SOURCES = [
     {
-        url: "https://www.phivolcs.dost.gov.ph/category/volcano/volcano-bulletin/mayon-volcano-bulletin/",
-        name: "PHIVOLCS Bulletins",
-    },
-    {
-        url: "https://www.phivolcs.dost.gov.ph/index.php/mayon-volcano-bulletin-menu",
+        url: "https://wovodat.phivolcs.dost.gov.ph/bulletin/list-of-bulletin",
         name: "PHIVOLCS Menu",
     },
 ];
@@ -89,27 +85,33 @@ function parseAlertLevel(html: string): { level: number | null; date: string | n
 }
 
 async function fetchAlertLevel(): Promise<AlertResponse> {
+    console.log('ALERT fetching!')
     // Try each source
     for (const source of SOURCES) {
+        console.log(source)
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-            const response = await fetch(source.url, {
+            // First try direct connection
+            let html = "";
+            let response = await fetch(source.url, {
                 headers: {
-                    "User-Agent": "MayonGeo/1.0 (Safety App)",
-                    Accept: "text/html",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 },
                 signal: controller.signal,
             });
+            console.log('xxx', response)
+            if (response.ok) {
+                html = await response.text();
+            } else {
+                throw new Error("Direct fetch failed");
+            }
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) continue;
-
-            const html = await response.text();
+            // If direct fetch worked, proceed to parse
             const { level, date } = parseAlertLevel(html);
-
+            console.log(level, date)
             if (level !== null) {
                 return {
                     volcano: "Mayon",
@@ -120,8 +122,30 @@ async function fetchAlertLevel(): Promise<AlertResponse> {
                     cached: false,
                 };
             }
-        } catch {
-            // Continue to next source
+        } catch (e) {
+            // If direct fetch failed, try via Proxy
+            try {
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(source.url)}`;
+                const proxyResponse = await fetch(proxyUrl);
+                if (proxyResponse.ok) {
+                    const proxyData = await proxyResponse.json();
+                    if (proxyData.contents) {
+                        const { level, date } = parseAlertLevel(proxyData.contents);
+                        if (level !== null) {
+                            return {
+                                volcano: "Mayon",
+                                alertLevel: level,
+                                description: ALERT_DESCRIPTIONS[level] || "Unknown",
+                                updatedAt: date || new Date().toISOString().split("T")[0],
+                                source: `${source.name} (via Proxy)`,
+                                cached: false,
+                            };
+                        }
+                    }
+                }
+            } catch (proxyErr) {
+                // Proxy also failed
+            }
         }
     }
 
