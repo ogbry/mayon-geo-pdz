@@ -1,16 +1,29 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import BackgroundLayout from "./components/BackgroundLayout";
 import Hero from "./components/Hero";
 import StatusCard from "./components/StatusCard";
+import AlertLevelCard from "./components/AlertLevelCard";
 import MapComponent from "./components/MapComponent";
 import LocationSearch from "./components/LocationSearch";
+import EvacuationPanel from "./components/EvacuationPanel";
 import useGeolocation from "./hooks/useGeolocation";
 import useLocationSearch from "./hooks/useLocationSearch";
+import useEvacuationCenters from "./hooks/useEvacuationCenters";
+import useRouting from "./hooks/useRouting";
+import useVolcanoAlert from "./hooks/useVolcanoAlert";
 import { calculateDistance } from "./utils/haversine";
 import { MAYON_COORDINATES, PDZ_RADIUS_KM } from "./utils/constants";
+import type { EvacuationCenter } from "./types/evacuation";
 
 function App() {
   const { coordinates, loaded, error } = useGeolocation();
+  const {
+    level: alertLevel,
+    lastUpdated: alertLastUpdated,
+    loading: alertLoading,
+    error: alertError,
+    refetch: refetchAlert,
+  } = useVolcanoAlert();
   const {
     location: searchedLocation,
     loading: searchLoading,
@@ -19,6 +32,74 @@ function App() {
     searchByCoordinates,
     clear: clearSearch,
   } = useLocationSearch();
+
+  // Evacuation centers and routing
+  const {
+    centers: rawCenters,
+    loading: centersLoading,
+    error: centersError,
+    fetchCenters,
+    getCentersWithDistance,
+  } = useEvacuationCenters();
+
+  const {
+    distance: routeDistance,
+    duration: routeDuration,
+    loading: routeLoading,
+    routeCoordinates,
+    getRoute,
+    clearRoute,
+  } = useRouting();
+
+  // Evacuation UI state
+  const [selectedCenter, setSelectedCenter] = useState<EvacuationCenter | null>(null);
+
+  // Fetch evacuation centers on mount
+  useEffect(() => {
+    fetchCenters();
+  }, [fetchCenters]);
+
+  // Calculate distances from searched location (priority) or user location
+  const centersWithDistance = useMemo(() => {
+    if (rawCenters.length === 0) return rawCenters;
+
+    // Prioritize searched location, fall back to user location
+    if (searchedLocation) {
+      return getCentersWithDistance(searchedLocation.lat, searchedLocation.lng);
+    }
+    if (coordinates) {
+      return getCentersWithDistance(coordinates.latitude, coordinates.longitude);
+    }
+    return rawCenters;
+  }, [coordinates, searchedLocation, rawCenters, getCentersWithDistance]);
+
+  // Determine the reference location for routing (searched takes priority)
+  const referenceLocation = useMemo(() => {
+    if (searchedLocation) {
+      return { lat: searchedLocation.lat, lng: searchedLocation.lng };
+    }
+    if (coordinates) {
+      return { lat: coordinates.latitude, lng: coordinates.longitude };
+    }
+    return null;
+  }, [searchedLocation, coordinates]);
+
+  // Handle center selection - trigger routing from reference location
+  const handleSelectCenter = useCallback(
+    (center: EvacuationCenter) => {
+      if (!referenceLocation) return;
+
+      setSelectedCenter(center);
+      getRoute(referenceLocation, { lat: center.lat, lng: center.lng });
+    },
+    [referenceLocation, getRoute]
+  );
+
+  // Clear selected center and route
+  const handleClearSelection = useCallback(() => {
+    setSelectedCenter(null);
+    clearRoute();
+  }, [clearRoute]);
 
   // Calculate distance for user's GPS location
   const userDistanceInfo = useMemo(() => {
@@ -72,45 +153,80 @@ function App() {
           hasLocation={!!searchedLocation}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          <div className="space-y-6">
-            {/* User GPS Location Status */}
-            <StatusCard
-              loading={loading}
-              error={errorMsg}
-              distance={userDistanceInfo?.distanceKm ?? null}
-              isInsidePDZ={userDistanceInfo?.isInsidePDZ ?? false}
-              label="Your Location"
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Left Panel - Compact Controls */}
+          <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
+            {/* Volcano Alert Level */}
+            <AlertLevelCard
+              level={alertLevel}
+              lastUpdated={alertLastUpdated}
+              loading={alertLoading}
+              error={alertError}
+              onRefresh={refetchAlert}
             />
 
-            {/* Searched Location Status */}
-            {searchedLocation && searchedDistanceInfo && (
+            {/* Status Cards Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
               <StatusCard
-                loading={false}
-                distance={searchedDistanceInfo.distanceKm}
-                isInsidePDZ={searchedDistanceInfo.isInsidePDZ}
-                label="Searched Location"
-                locationName={searchedLocation.name}
+                loading={loading}
+                error={errorMsg}
+                distance={userDistanceInfo?.distanceKm ?? null}
+                isInsidePDZ={userDistanceInfo?.isInsidePDZ ?? false}
+                label="Your Location"
+                compact
               />
-            )}
+
+              {searchedLocation && searchedDistanceInfo && (
+                <StatusCard
+                  loading={false}
+                  distance={searchedDistanceInfo.distanceKm}
+                  isInsidePDZ={searchedDistanceInfo.isInsidePDZ}
+                  label="Searched Location"
+                  locationName={searchedLocation.name}
+                  compact
+                />
+              )}
+            </div>
+
+            {/* Evacuation Centers Panel */}
+            <EvacuationPanel
+              centers={centersWithDistance}
+              loading={centersLoading}
+              error={centersError}
+              onSelectCenter={handleSelectCenter}
+              onClearSelection={handleClearSelection}
+              selectedCenter={selectedCenter}
+              routeInfo={{
+                distance: routeDistance,
+                duration: routeDuration,
+                loading: routeLoading,
+              }}
+              hasUserLocation={!!referenceLocation}
+              onRefresh={fetchCenters}
+            />
           </div>
 
-          <MapComponent
-            userLocation={
-              coordinates
-                ? { lat: coordinates.latitude, lng: coordinates.longitude }
-                : undefined
-            }
-            searchedLocation={
-              searchedLocation
-                ? {
-                    lat: searchedLocation.lat,
-                    lng: searchedLocation.lng,
-                    name: searchedLocation.name,
-                  }
-                : undefined
-            }
-          />
+          {/* Right Panel - Prominent Map */}
+          <div className="lg:col-span-3 order-1 lg:order-2">
+            <MapComponent
+              userLocation={
+                coordinates
+                  ? { lat: coordinates.latitude, lng: coordinates.longitude }
+                  : undefined
+              }
+              searchedLocation={
+                searchedLocation
+                  ? {
+                      lat: searchedLocation.lat,
+                      lng: searchedLocation.lng,
+                      name: searchedLocation.name,
+                    }
+                  : undefined
+              }
+              selectedCenter={selectedCenter}
+              routeCoordinates={routeCoordinates}
+            />
+          </div>
         </div>
 
         {/* Emergency Contacts & Resources */}

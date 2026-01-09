@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Circle, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MAYON_COORDINATES, PDZ_RADIUS_KM } from "../utils/constants";
+import type { EvacuationCenter, EvacuationCenterType } from "../types/evacuation";
+import type { RouteCoordinate } from "../hooks/useRouting";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -45,9 +47,40 @@ const UserIcon = L.divIcon({
     iconAnchor: [12, 12],
 });
 
+// Evacuation center icons by type
+const evacuationColors: Record<EvacuationCenterType, string> = {
+    shelter: "#f97316",
+    school: "#eab308",
+    hospital: "#ef4444",
+    government: "#3b82f6",
+};
+
+const createEvacuationIcon = (type: EvacuationCenterType, isSelected: boolean) => {
+    const color = evacuationColors[type];
+    const size = isSelected ? 28 : 20;
+    const borderWidth = isSelected ? 4 : 3;
+
+    return L.divIcon({
+        className: "evacuation-marker",
+        html: `<div style="
+            background-color: ${color};
+            width: ${size}px;
+            height: ${size}px;
+            border-radius: 50%;
+            border: ${borderWidth}px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            ${isSelected ? "animation: evacuation-pulse 1.5s ease-in-out infinite;" : ""}
+        "></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+    });
+};
+
 interface MapComponentProps {
     userLocation?: { lat: number; lng: number };
     searchedLocation?: { lat: number; lng: number; name: string };
+    selectedCenter?: EvacuationCenter | null;
+    routeCoordinates?: RouteCoordinate[];
 }
 
 // Component to fly to a location when updated
@@ -65,11 +98,16 @@ const FlyToLocation: React.FC<{ coords?: { lat: number; lng: number }; priority?
     return null;
 };
 
-const MapComponent: React.FC<MapComponentProps> = ({ userLocation, searchedLocation }) => {
+const MapComponent: React.FC<MapComponentProps> = ({
+    userLocation,
+    searchedLocation,
+    selectedCenter,
+    routeCoordinates,
+}) => {
     const pdzRadiusMeters = PDZ_RADIUS_KM * 1000;
 
     return (
-        <div className="h-[400px] w-full rounded-3xl overflow-hidden border border-white/20 shadow-2xl relative z-0">
+        <div className="h-[400px] lg:h-[520px] w-full rounded-3xl overflow-hidden border border-white/20 shadow-2xl relative z-0 sticky top-4">
             <MapContainer
                 center={[MAYON_COORDINATES.lat, MAYON_COORDINATES.lng]}
                 zoom={11}
@@ -129,6 +167,38 @@ const MapComponent: React.FC<MapComponentProps> = ({ userLocation, searchedLocat
                             </div>
                         </Popup>
                     </Marker>
+                )}
+
+                {/* Selected Evacuation Center Only */}
+                {selectedCenter && (
+                    <Marker
+                        position={[selectedCenter.lat, selectedCenter.lng]}
+                        icon={createEvacuationIcon(selectedCenter.type, true)}
+                    >
+                        <Popup>
+                            <div className="text-center min-w-[150px]">
+                                <span className="font-bold text-orange-600 block">{selectedCenter.name}</span>
+                                <span className="text-xs text-gray-600 capitalize">{selectedCenter.type}</span>
+                                {selectedCenter.distanceFromUser !== undefined && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {selectedCenter.distanceFromUser.toFixed(2)} km away
+                                    </p>
+                                )}
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
+                {/* Route Polyline */}
+                {routeCoordinates && routeCoordinates.length > 0 && (
+                    <Polyline
+                        positions={routeCoordinates.map((coord) => [coord.lat, coord.lng])}
+                        pathOptions={{
+                            color: "#f97316",
+                            weight: 5,
+                            opacity: 0.8,
+                        }}
+                    />
                 )}
 
                 {/* Fly to searched location when it changes (priority), otherwise fly to user */}

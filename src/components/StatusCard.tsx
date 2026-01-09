@@ -10,6 +10,7 @@ interface StatusCardProps {
     error?: string;
     label?: string;
     locationName?: string;
+    compact?: boolean;
 }
 
 const StatusCard: React.FC<StatusCardProps> = ({
@@ -19,6 +20,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
     error,
     label,
     locationName,
+    compact = false,
 }) => {
     // Determine status config
     const status = loading
@@ -28,7 +30,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
             border: "border-gray-500/20",
             icon: Navigation,
             title: "Locating...",
-            message: "Acquiring your precise location.",
+            message: "Acquiring location...",
         }
         : error
             ? {
@@ -36,7 +38,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
                 bg: "bg-amber-500/10",
                 border: "border-amber-500/20",
                 icon: AlertTriangle,
-                title: "Location Error",
+                title: "Error",
                 message: error,
             }
             : isInsidePDZ
@@ -45,20 +47,74 @@ const StatusCard: React.FC<StatusCardProps> = ({
                     bg: "bg-rose-500/10",
                     border: "border-rose-500/20",
                     icon: AlertTriangle,
-                    title: "DANGER ZONE!",
-                    message: "You are inside the 6km Permanent Danger Zone.",
+                    title: "DANGER!",
+                    message: "Inside 6km PDZ",
                 }
                 : {
                     color: "text-emerald-400",
                     bg: "bg-emerald-500/10",
                     border: "border-emerald-500/20",
                     icon: CheckCircle,
-                    title: "Safe Zone",
-                    message: "You are outside the 6km Permanent Danger Zone.",
+                    title: "Safe",
+                    message: "Outside PDZ",
                 };
 
     const Icon = status.icon;
 
+    // Compact layout
+    if (compact) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={clsx(
+                    "backdrop-blur-xl rounded-2xl p-4 border shadow-lg transition-all duration-500",
+                    status.bg,
+                    status.border
+                )}
+            >
+                {/* Label */}
+                {label && (
+                    <div className="mb-2 pb-2 border-b border-white/10">
+                        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                            {label}
+                        </span>
+                        {locationName && (
+                            <p className="text-xs text-gray-500 truncate" title={locationName}>
+                                {locationName}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                    <div className={clsx("p-2 rounded-full bg-white/5 ring-1 ring-white/10", status.color)}>
+                        <Icon size={24} className={loading ? "animate-pulse" : ""} />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                        <h3 className={clsx("text-lg font-bold", status.color)}>
+                            {status.title}
+                        </h3>
+                        <p className="text-gray-400 text-xs truncate">{status.message}</p>
+                    </div>
+
+                    {!loading && !error && distance !== null && (
+                        <div className="text-right">
+                            <div className="flex items-baseline gap-0.5">
+                                <span className="text-2xl font-mono font-bold text-white">
+                                    {distance.toFixed(1)}
+                                </span>
+                                <span className="text-sm text-gray-500">km</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        );
+    }
+
+    // Full layout (original)
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
