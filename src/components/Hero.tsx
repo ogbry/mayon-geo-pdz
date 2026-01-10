@@ -1,24 +1,25 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { MapPin } from "lucide-react";
+import { useLanguage } from "../i18n";
 
 const Hero: React.FC = () => {
+    const { t } = useLanguage();
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-4 mb-8 md:mb-12"
-        >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold tracking-wider uppercase backdrop-blur-md mb-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                Albay, Philippines
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-6">
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                    {t.dashboardTitle}
+                </h1>
+                <p className="text-sm md:text-base text-slate-400 mt-1">
+                    {t.dashboardSubtitle}
+                </p>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-400 drop-shadow-sm">
-                Mayon Safety Zone
-            </h1>
-            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
-                Real-time awareness of your proximity to the Mayon Volcano Permanent Danger Zone (PDZ).
-            </p>
-        </motion.div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 text-sm">
+                <MapPin size={14} className="text-orange-400" />
+                <span>{t.location}</span>
+            </div>
+        </div>
     );
 };
 

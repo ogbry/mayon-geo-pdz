@@ -11,17 +11,14 @@ const BackgroundLayout: React.FC<BackgroundLayoutProps> = ({
     className,
 }) => {
     return (
-        <div className="relative min-h-screen w-full bg-[#0a0f1c] text-white overflow-x-hidden selection:bg-rose-500/30">
-            {/* Ambient background effects - static gradients for better performance */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[80px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-500/10 rounded-full blur-[80px]" />
-            </div>
+        <div className="relative min-h-screen w-full bg-slate-950 text-white overflow-x-hidden selection:bg-orange-500/30">
+            {/* Subtle gradient overlay */}
+            <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
 
-            {/* Grid pattern overlay (optional for tech feel) */}
-            <div className="fixed inset-0 z-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+            {/* Subtle accent glow - top */}
+            <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className={clsx("relative z-10 w-full py-8 md:py-12", className)}>
+            <div className={clsx("relative z-10 w-full", className)}>
                 {children}
             </div>
         </div>

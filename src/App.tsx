@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import BackgroundLayout from "./components/BackgroundLayout";
+import Header from "./components/Header";
 import Hero from "./components/Hero";
 import StatusCard from "./components/StatusCard";
 import AlertLevelCard from "./components/AlertLevelCard";
@@ -7,6 +8,7 @@ import MapComponent from "./components/MapComponent";
 import LocationSearch from "./components/LocationSearch";
 import EvacuationPanel from "./components/EvacuationPanel";
 import SafetyTipsCard from "./components/SafetyTipsCard";
+import MobileNav from "./components/MobileNav";
 import useGeolocation from "./hooks/useGeolocation";
 import useLocationSearch from "./hooks/useLocationSearch";
 import useEvacuationCenters from "./hooks/useEvacuationCenters";
@@ -15,8 +17,10 @@ import useVolcanoAlert from "./hooks/useVolcanoAlert";
 import { calculateDistance } from "./utils/haversine";
 import { MAYON_COORDINATES, PDZ_RADIUS_KM } from "./utils/constants";
 import type { EvacuationCenter } from "./types/evacuation";
+import { useLanguage } from "./i18n";
 
 function App() {
+  const { t } = useLanguage();
   const { coordinates, loaded, error } = useGeolocation();
   const {
     level: alertLevel,
@@ -141,23 +145,53 @@ function App() {
 
   return (
     <BackgroundLayout>
-      <div className="w-full px-4 md:px-8 lg:px-12 space-y-8">
+      {/* Sticky Header */}
+      <Header alertLevel={alertLevel} />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <Hero />
 
         {/* Location Search */}
-        <LocationSearch
-          onSearchAddress={searchByAddress}
-          onSearchCoordinates={searchByCoordinates}
-          onClear={clearSearch}
-          loading={searchLoading}
-          error={searchError}
-          hasLocation={!!searchedLocation}
-        />
+        <div className="mb-6">
+          <LocationSearch
+            onSearchAddress={searchByAddress}
+            onSearchCoordinates={searchByCoordinates}
+            onClear={clearSearch}
+            loading={searchLoading}
+            error={searchError}
+            hasLocation={!!searchedLocation}
+          />
+        </div>
 
-        {/* Top Row: Alert Level + Status Cards | Map */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left: Alert + Status */}
-          <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
+        {/* Main Grid: Map + Info Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Map - Takes 2/3 on large screens */}
+          <div id="map" className="lg:col-span-2 order-1">
+            <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+              <MapComponent
+                userLocation={
+                  coordinates
+                    ? { lat: coordinates.latitude, lng: coordinates.longitude }
+                    : undefined
+                }
+                searchedLocation={
+                  searchedLocation
+                    ? {
+                        lat: searchedLocation.lat,
+                        lng: searchedLocation.lng,
+                        name: searchedLocation.name,
+                      }
+                    : undefined
+                }
+                selectedCenter={selectedCenter}
+                routeCoordinates={routeCoordinates}
+              />
+            </div>
+          </div>
+
+          {/* Right Sidebar - Info Cards */}
+          <div className="lg:col-span-1 space-y-4 order-2">
             {/* Alert Level */}
             <AlertLevelCard
               level={alertLevel}
@@ -168,54 +202,30 @@ function App() {
             />
 
             {/* Status Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatusCard
+              loading={loading}
+              error={errorMsg}
+              distance={userDistanceInfo?.distanceKm ?? null}
+              isInsidePDZ={userDistanceInfo?.isInsidePDZ ?? false}
+              label={t.yourLocation}
+              compact
+            />
+
+            {searchedLocation && searchedDistanceInfo && (
               <StatusCard
-                loading={loading}
-                error={errorMsg}
-                distance={userDistanceInfo?.distanceKm ?? null}
-                isInsidePDZ={userDistanceInfo?.isInsidePDZ ?? false}
-                label="Your Location"
+                loading={false}
+                distance={searchedDistanceInfo.distanceKm}
+                isInsidePDZ={searchedDistanceInfo.isInsidePDZ}
+                label={t.searchedLocation}
+                locationName={searchedLocation.name}
                 compact
               />
-
-              {searchedLocation && searchedDistanceInfo && (
-                <StatusCard
-                  loading={false}
-                  distance={searchedDistanceInfo.distanceKm}
-                  isInsidePDZ={searchedDistanceInfo.isInsidePDZ}
-                  label="Searched Location"
-                  locationName={searchedLocation.name}
-                  compact
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Right: Map */}
-          <div className="lg:col-span-3 order-1 lg:order-2">
-            <MapComponent
-              userLocation={
-                coordinates
-                  ? { lat: coordinates.latitude, lng: coordinates.longitude }
-                  : undefined
-              }
-              searchedLocation={
-                searchedLocation
-                  ? {
-                      lat: searchedLocation.lat,
-                      lng: searchedLocation.lng,
-                      name: searchedLocation.name,
-                    }
-                  : undefined
-              }
-              selectedCenter={selectedCenter}
-              routeCoordinates={routeCoordinates}
-            />
+            )}
           </div>
         </div>
 
         {/* Bottom Row: Evacuation Centers | Safety Tips */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <EvacuationPanel
             centers={centersWithDistance}
             loading={centersLoading}
@@ -237,16 +247,17 @@ function App() {
         </div>
 
         {/* Emergency Contacts & Resources */}
-        <footer className="border-t border-white/10 pt-8 pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <footer id="contacts" className="border-t border-slate-800 pt-8 pb-6">
+          <h3 className="text-lg font-semibold text-white mb-6">{t.emergencyContacts}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {/* PHIVOLCS */}
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-              <h4 className="text-white font-semibold mb-3">PHIVOLCS</h4>
+            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
+              <h4 className="text-white font-medium mb-3">PHIVOLCS</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
                     href="tel:+6328426146879"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
                     <span className="text-blue-400">Trunkline:</span> (02) 8426-1468 to 79
                   </a>
@@ -256,9 +267,9 @@ function App() {
                     href="https://www.phivolcs.dost.gov.ph"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-blue-400">Website:</span> phivolcs.dost.gov.ph
+                    <span className="text-blue-400">{t.website}:</span> phivolcs.dost.gov.ph
                   </a>
                 </li>
                 <li>
@@ -266,7 +277,7 @@ function App() {
                     href="https://www.facebook.com/PHIVOLCS"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
                     <span className="text-blue-400">Facebook:</span> /PHIVOLCS
                   </a>
@@ -275,15 +286,15 @@ function App() {
             </div>
 
             {/* Mayon Volcano Observatory */}
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-              <h4 className="text-white font-semibold mb-3">Mayon Volcano Observatory</h4>
+            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
+              <h4 className="text-white font-medium mb-3">Mayon Volcano Observatory</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
                     href="tel:+63528242383"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-blue-400">Hotline:</span> (052) 824-2383
+                    <span className="text-blue-400">{t.hotline}:</span> (052) 824-2383
                   </a>
                 </li>
                 <li>
@@ -291,35 +302,35 @@ function App() {
                     href="https://www.phivolcs.dost.gov.ph/mayon-volcano-observatory/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
                     <span className="text-blue-400">Info:</span> MVO Page
                   </a>
                 </li>
-                <li className="text-gray-500">
-                  Located at Ligñon Hill, Albay
+                <li className="text-slate-500">
+                  {t.locatedAt}
                 </li>
               </ul>
             </div>
 
             {/* Emergency Hotlines */}
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
-              <h4 className="text-white font-semibold mb-3">Emergency Hotlines</h4>
+            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
+              <h4 className="text-white font-medium mb-3">Emergency Hotlines</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
                     href="tel:911"
-                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-rose-400">National Emergency:</span> 911
+                    <span className="text-rose-400">{t.nationalEmergency}:</span> 911
                   </a>
                 </li>
                 <li>
                   <a
                     href="tel:143"
-                    className="text-gray-400 hover:text-rose-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-2"
                   >
-                    <span className="text-rose-400">Red Cross:</span> 143
+                    <span className="text-rose-400">{t.redCross}:</span> 143
                   </a>
                 </li>
                 <li>
@@ -327,7 +338,7 @@ function App() {
                     href="https://www.albay.gov.ph/contact/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
                   >
                     <span className="text-blue-400">Albay Gov:</span> albay.gov.ph/contact
                   </a>
@@ -336,15 +347,18 @@ function App() {
             </div>
           </div>
 
-          <div className="text-center text-gray-500 text-sm border-t border-white/10 pt-6">
-            <p>A project from <a href="https://bryan-web.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
-            <p className="mt-1">© {new Date().getFullYear()} Mayon Safety Initiative.</p>
-            <p className="mt-1">
-              Stay safe. Always follow official advisories from local authorities and PHIVOLCS.
+          <div className="text-center text-slate-500 text-sm border-t border-slate-800 pt-6">
+            <p>{t.projectFrom} <a href="https://bryan-web.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
+            <p className="mt-1">© {new Date().getFullYear()} {t.appName}. {t.allRightsReserved}</p>
+            <p className="mt-2 text-xs">
+              {t.followAdvisories}
             </p>
           </div>
         </footer>
-      </div>
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
     </BackgroundLayout>
   );
 }

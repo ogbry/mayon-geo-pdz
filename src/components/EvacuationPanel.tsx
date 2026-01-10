@@ -1,6 +1,5 @@
 import React from "react";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
 import {
     Shield,
     Building2,
@@ -14,8 +13,10 @@ import {
     Route,
     X,
     ExternalLink,
+    RefreshCw,
 } from "lucide-react";
 import type { EvacuationCenter, EvacuationCenterType } from "../types/evacuation";
+import { useLanguage } from "../i18n";
 
 interface EvacuationPanelProps {
     centers: EvacuationCenter[];
@@ -87,30 +88,46 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
     userLocation,
     onRefresh,
 }) => {
+    const { t } = useLanguage();
+
+    const typeLabels: Record<EvacuationCenterType, string> = {
+        shelter: t.shelter,
+        school: t.school,
+        hospital: t.hospital,
+        government: t.government,
+    };
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/10 bg-white/5 shadow-lg"
-        >
+        <div id="evacuation" className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 rounded-full bg-orange-500/10">
-                    <Shield size={20} className="text-orange-400" />
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-orange-400" />
+                    <span className="text-sm font-medium text-slate-300">{t.evacuationCenters}</span>
+                    {centers.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-slate-400">
+                            {centers.length}
+                        </span>
+                    )}
                 </div>
-                <div>
-                    <h3 className="text-lg font-semibold text-white">Evacuation Centers</h3>
-                    <p className="text-xs text-gray-500">
-                        {centers.length > 0 ? `${centers.length} found nearby` : "Loading..."}
-                    </p>
-                </div>
+                <button
+                    onClick={onRefresh}
+                    disabled={loading}
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                    title={t.refresh}
+                >
+                    <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                </button>
             </div>
+
+            {/* Content */}
+            <div className="p-4">
 
             {/* Loading State */}
             {loading && (
                 <div className="flex items-center justify-center py-8 text-gray-400">
                     <Loader2 size={24} className="animate-spin mr-2" />
-                    <span>Loading evacuation centers...</span>
+                    <span>{t.loadingCenters}</span>
                 </div>
             )}
 
@@ -122,7 +139,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                         onClick={onRefresh}
                         className="ml-2 underline hover:no-underline"
                     >
-                        Retry
+                        {t.retry}
                     </button>
                 </div>
             )}
@@ -134,13 +151,13 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                         <div className="flex items-center gap-2 min-w-0">
                             <Route size={16} className="text-orange-400 flex-shrink-0" />
                             <span className="text-sm font-medium text-orange-400 truncate">
-                                Route to {selectedCenter.name}
+                                {t.routeTo} {selectedCenter.name}
                             </span>
                         </div>
                         <button
                             onClick={onClearSelection}
                             className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex-shrink-0"
-                            title="Clear selection"
+                            title={t.clearSelection}
                         >
                             <X size={16} />
                         </button>
@@ -148,7 +165,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                     {routeInfo.loading ? (
                         <div className="flex items-center text-gray-400 text-sm">
                             <Loader2 size={14} className="animate-spin mr-2" />
-                            Calculating route...
+                            {t.calculatingRoute}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3">
@@ -162,7 +179,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                 {routeInfo.duration !== null && (
                                     <div className="flex items-center gap-1 text-gray-300">
                                         <Clock size={14} className="text-gray-500" />
-                                        {formatDuration(routeInfo.duration)} drive
+                                        {formatDuration(routeInfo.duration)} {t.drive}
                                     </div>
                                 )}
                             </div>
@@ -176,7 +193,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                 className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
                             >
                                 <ExternalLink size={14} />
-                                Get Directions in Google Maps
+                                {t.getDirections}
                             </a>
                         </div>
                     )}
@@ -185,7 +202,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
 
             {/* Centers List */}
             {!loading && centers.length > 0 && (
-                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                     {centers.slice(0, 15).map((center) => {
                         const Icon = typeIcons[center.type];
                         const isSelected = selectedCenter?.id === center.id;
@@ -198,12 +215,12 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                 className={clsx(
                                     "w-full p-3 rounded-xl text-left transition-colors flex items-center gap-3",
                                     isSelected
-                                        ? "bg-orange-500/20 border border-orange-500/30"
-                                        : "bg-white/5 border border-white/10 hover:bg-white/10",
+                                        ? "bg-orange-500/10 border border-orange-500/20"
+                                        : "bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800",
                                     !hasUserLocation && "opacity-50 cursor-not-allowed"
                                 )}
                             >
-                                <div className={clsx("p-2 rounded-lg bg-white/5", typeColors[center.type])}>
+                                <div className={clsx("p-2 rounded-lg bg-slate-800", typeColors[center.type])}>
                                     <Icon size={16} />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -215,11 +232,11 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                     >
                                         {center.name}
                                     </p>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        <span className="capitalize">{center.type}</span>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                        <span className="capitalize">{typeLabels[center.type]}</span>
                                         {center.distanceFromUser !== undefined && (
                                             <>
-                                                <span>-</span>
+                                                <span>•</span>
                                                 <span>{center.distanceFromUser.toFixed(1)} km</span>
                                             </>
                                         )}
@@ -228,7 +245,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                 {hasUserLocation && (
                                     <ChevronRight
                                         size={16}
-                                        className={isSelected ? "text-orange-400" : "text-gray-500"}
+                                        className={isSelected ? "text-orange-400" : "text-slate-500"}
                                     />
                                 )}
                             </button>
@@ -241,24 +258,25 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
             {!hasUserLocation && !loading && centers.length > 0 && (
                 <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-amber-400 text-sm">
                     <Navigation size={16} />
-                    <span>Enable location or search a place to get directions</span>
+                    <span>{t.enableLocation}</span>
                 </div>
             )}
 
             {/* Empty State */}
             {!loading && !error && centers.length === 0 && (
-                <div className="py-8 text-center text-gray-400">
+                <div className="py-8 text-center text-slate-400">
                     <Shield size={32} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No evacuation centers found</p>
+                    <p className="text-sm">{t.noCentersFound}</p>
                     <button
                         onClick={onRefresh}
                         className="mt-2 text-xs text-orange-400 hover:underline"
                     >
-                        Refresh
+                        {t.refresh}
                     </button>
                 </div>
             )}
-        </motion.div>
+            </div>
+        </div>
     );
 };
 
