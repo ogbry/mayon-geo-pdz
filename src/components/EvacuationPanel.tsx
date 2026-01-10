@@ -13,6 +13,7 @@ import {
     Clock,
     Route,
     X,
+    ExternalLink,
 } from "lucide-react";
 import type { EvacuationCenter, EvacuationCenterType } from "../types/evacuation";
 
@@ -29,6 +30,7 @@ interface EvacuationPanelProps {
         loading: boolean;
     } | null;
     hasUserLocation: boolean;
+    userLocation?: { lat: number; lng: number } | null;
     onRefresh: () => void;
 }
 
@@ -59,6 +61,20 @@ const formatDuration = (seconds: number): string => {
     return `${hours}h ${remainingMins}m`;
 };
 
+const getGoogleMapsUrl = (
+    destination: { lat: number; lng: number; name: string },
+    origin?: { lat: number; lng: number } | null
+): string => {
+    const destParam = `${destination.lat},${destination.lng}`;
+    const destName = encodeURIComponent(destination.name);
+
+    if (origin) {
+        return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destParam}&destination_place_id=${destName}&travelmode=driving`;
+    }
+    // If no origin, Google Maps will use user's current location
+    return `https://www.google.com/maps/dir/?api=1&destination=${destParam}&travelmode=driving`;
+};
+
 const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
     centers,
     loading,
@@ -68,6 +84,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
     selectedCenter,
     routeInfo,
     hasUserLocation,
+    userLocation,
     onRefresh,
 }) => {
     return (
@@ -134,19 +151,33 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                             Calculating route...
                         </div>
                     ) : (
-                        <div className="flex gap-4 text-sm">
-                            {routeInfo.distance !== null && (
-                                <div className="flex items-center gap-1 text-gray-300">
-                                    <MapPin size={14} className="text-gray-500" />
-                                    {formatDistance(routeInfo.distance)}
-                                </div>
-                            )}
-                            {routeInfo.duration !== null && (
-                                <div className="flex items-center gap-1 text-gray-300">
-                                    <Clock size={14} className="text-gray-500" />
-                                    {formatDuration(routeInfo.duration)} drive
-                                </div>
-                            )}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-4 text-sm">
+                                {routeInfo.distance !== null && (
+                                    <div className="flex items-center gap-1 text-gray-300">
+                                        <MapPin size={14} className="text-gray-500" />
+                                        {formatDistance(routeInfo.distance)}
+                                    </div>
+                                )}
+                                {routeInfo.duration !== null && (
+                                    <div className="flex items-center gap-1 text-gray-300">
+                                        <Clock size={14} className="text-gray-500" />
+                                        {formatDuration(routeInfo.duration)} drive
+                                    </div>
+                                )}
+                            </div>
+                            <a
+                                href={getGoogleMapsUrl(
+                                    { lat: selectedCenter.lat, lng: selectedCenter.lng, name: selectedCenter.name },
+                                    userLocation
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+                            >
+                                <ExternalLink size={14} />
+                                Get Directions in Google Maps
+                            </a>
                         </div>
                     )}
                 </div>
@@ -165,7 +196,7 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
                                 onClick={() => onSelectCenter(center)}
                                 disabled={!hasUserLocation}
                                 className={clsx(
-                                    "w-full p-3 rounded-xl text-left transition-all flex items-center gap-3",
+                                    "w-full p-3 rounded-xl text-left transition-colors flex items-center gap-3",
                                     isSelected
                                         ? "bg-orange-500/20 border border-orange-500/30"
                                         : "bg-white/5 border border-white/10 hover:bg-white/10",
@@ -231,4 +262,4 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
     );
 };
 
-export default EvacuationPanel;
+export default React.memo(EvacuationPanel);

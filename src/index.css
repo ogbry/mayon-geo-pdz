@@ -74,15 +74,15 @@ button:focus-visible {
   }
 }
 
-/* Evacuation marker pulse animation */
+/* Evacuation marker pulse animation - GPU accelerated */
 @keyframes evacuation-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    opacity: 1;
   }
   50% {
     transform: scale(1.15);
-    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.6);
+    opacity: 0.9;
   }
 }
 

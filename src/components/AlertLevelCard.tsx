@@ -72,7 +72,7 @@ const AlertLevelCard: React.FC<AlertLevelCardProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={clsx(
-                "backdrop-blur-xl rounded-2xl p-4 border shadow-lg transition-all duration-500",
+                "backdrop-blur-xl rounded-2xl p-4 border shadow-lg transition-colors duration-300",
                 colors.bg,
                 colors.border,
                 colors.glow

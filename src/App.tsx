@@ -6,6 +6,7 @@ import AlertLevelCard from "./components/AlertLevelCard";
 import MapComponent from "./components/MapComponent";
 import LocationSearch from "./components/LocationSearch";
 import EvacuationPanel from "./components/EvacuationPanel";
+import SafetyTipsCard from "./components/SafetyTipsCard";
 import useGeolocation from "./hooks/useGeolocation";
 import useLocationSearch from "./hooks/useLocationSearch";
 import useEvacuationCenters from "./hooks/useEvacuationCenters";
@@ -153,10 +154,11 @@ function App() {
           hasLocation={!!searchedLocation}
         />
 
+        {/* Top Row: Alert Level + Status Cards | Map */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Panel - Compact Controls */}
+          {/* Left: Alert + Status */}
           <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
-            {/* Volcano Alert Level */}
+            {/* Alert Level */}
             <AlertLevelCard
               level={alertLevel}
               lastUpdated={alertLastUpdated}
@@ -165,8 +167,8 @@ function App() {
               onRefresh={refetchAlert}
             />
 
-            {/* Status Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+            {/* Status Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <StatusCard
                 loading={loading}
                 error={errorMsg}
@@ -187,26 +189,9 @@ function App() {
                 />
               )}
             </div>
-
-            {/* Evacuation Centers Panel */}
-            <EvacuationPanel
-              centers={centersWithDistance}
-              loading={centersLoading}
-              error={centersError}
-              onSelectCenter={handleSelectCenter}
-              onClearSelection={handleClearSelection}
-              selectedCenter={selectedCenter}
-              routeInfo={{
-                distance: routeDistance,
-                duration: routeDuration,
-                loading: routeLoading,
-              }}
-              hasUserLocation={!!referenceLocation}
-              onRefresh={fetchCenters}
-            />
           </div>
 
-          {/* Right Panel - Prominent Map */}
+          {/* Right: Map */}
           <div className="lg:col-span-3 order-1 lg:order-2">
             <MapComponent
               userLocation={
@@ -227,6 +212,28 @@ function App() {
               routeCoordinates={routeCoordinates}
             />
           </div>
+        </div>
+
+        {/* Bottom Row: Evacuation Centers | Safety Tips */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <EvacuationPanel
+            centers={centersWithDistance}
+            loading={centersLoading}
+            error={centersError}
+            onSelectCenter={handleSelectCenter}
+            onClearSelection={handleClearSelection}
+            selectedCenter={selectedCenter}
+            routeInfo={{
+              distance: routeDistance,
+              duration: routeDuration,
+              loading: routeLoading,
+            }}
+            hasUserLocation={!!referenceLocation}
+            userLocation={referenceLocation}
+            onRefresh={fetchCenters}
+          />
+
+          <SafetyTipsCard alertLevel={alertLevel} />
         </div>
 
         {/* Emergency Contacts & Resources */}

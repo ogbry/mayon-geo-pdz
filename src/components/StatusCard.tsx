@@ -68,7 +68,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={clsx(
-                    "backdrop-blur-xl rounded-2xl p-4 border shadow-lg transition-all duration-500",
+                    "backdrop-blur-xl rounded-2xl p-4 border shadow-lg transition-colors duration-300",
                     status.bg,
                     status.border
                 )}
@@ -120,7 +120,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={clsx(
-                "backdrop-blur-xl rounded-3xl p-6 md:p-8 border shadow-lg transition-all duration-500",
+                "backdrop-blur-xl rounded-3xl p-6 md:p-8 border shadow-lg transition-colors duration-300",
                 status.bg,
                 status.border
             )}
