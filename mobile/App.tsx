@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import { AppProvider } from './src/context/AppContext';
@@ -16,21 +17,23 @@ export default function App() {
 
   if (!splashDone) {
     return (
-      <>
+      <SafeAreaProvider>
         <StatusBar style="light" />
         <SplashScreen onFinish={handleSplashFinish} />
-      </>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <LanguageProvider>
-      <AppProvider>
-        <StatusBar style="light" />
-        <NavigationContainer>
-          <TabNavigator />
-        </NavigationContainer>
-      </AppProvider>
-    </LanguageProvider>
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <AppProvider>
+          <StatusBar style="light" />
+          <NavigationContainer>
+            <TabNavigator />
+          </NavigationContainer>
+        </AppProvider>
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }
