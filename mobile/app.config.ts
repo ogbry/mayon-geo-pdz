@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Ligtas Mayon',
   slug: 'ligtas-mayon',
+  owner: 'ogbry',
   version: '1.0.1',
   orientation: 'portrait',
   icon: './assets/icon.png',
