@@ -20,23 +20,32 @@ const TAB_ICONS: Record<string, { outline: keyof typeof Ionicons.glyphMap; fille
   Safety: { outline: 'information-circle-outline', filled: 'information-circle' },
 };
 
+const TAB_LABEL_KEYS: Record<string, 'navHome' | 'navMap' | 'navEvacuation' | 'navSafety'> = {
+  Home: 'navHome',
+  Map: 'navMap',
+  Evacuation: 'navEvacuation',
+  Safety: 'navSafety',
+};
+
 const Tab = createMaterialTopTabNavigator();
 
-function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
+function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const insets = useSafeAreaInsets();
   const { alertData } = useApp();
+  const { t } = useLanguage();
   const level = alertData?.alertLevel ?? 0;
   const scheme = getAlertColorScheme(level);
 
   return (
     <View style={[styles.tabBar, { paddingBottom: 8 + insets.bottom, height: 60 + insets.bottom }]}>
       {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
         const isFocused = state.index === index;
         const color = isFocused ? Colors.accent : Colors.tabInactive;
         const icons = TAB_ICONS[route.name];
         const iconName = isFocused ? icons.filled : icons.outline;
         const showBadge = route.name === 'Home' && level >= 3;
+        const labelKey = TAB_LABEL_KEYS[route.name];
+        const label = labelKey ? t[labelKey] : route.name;
 
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -56,7 +65,7 @@ function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps
               ) : null}
             </View>
             <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
-              {options.tabBarLabel as string ?? route.name}
+              {label}
             </Text>
           </Pressable>
         );
@@ -66,8 +75,6 @@ function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps
 }
 
 export default function TabNavigator() {
-  const { t } = useLanguage();
-
   return (
     <Tab.Navigator
       tabBarPosition="bottom"
@@ -78,10 +85,10 @@ export default function TabNavigator() {
         animationEnabled: true,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t.navHome }} />
-      <Tab.Screen name="Map" component={MapScreen} options={{ tabBarLabel: t.navMap, swipeEnabled: false }} />
-      <Tab.Screen name="Evacuation" component={EvacuationScreen} options={{ tabBarLabel: t.navEvacuation }} />
-      <Tab.Screen name="Safety" component={SafetyScreen} options={{ tabBarLabel: t.navSafety }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Map" component={MapScreen} options={{ swipeEnabled: false }} />
+      <Tab.Screen name="Evacuation" component={EvacuationScreen} />
+      <Tab.Screen name="Safety" component={SafetyScreen} />
     </Tab.Navigator>
   );
 }
