@@ -27,6 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     versionCode: 2,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
+      backgroundImage: './assets/adaptive-icon-bg.png',
       backgroundColor: '#050A12',
     },
     permissions: ['ACCESS_FINE_LOCATION'],
