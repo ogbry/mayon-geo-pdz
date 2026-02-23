@@ -277,6 +277,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+
   const requestLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -291,13 +293,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLocation({ lat: last.coords.latitude, lng: last.coords.longitude });
       }
 
-      // Then get a fresh fix with lower accuracy to avoid long GPS lock
-      const current = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Low,
-      });
-      setLocation({ lat: current.coords.latitude, lng: current.coords.longitude });
+      // Stop any existing watch before starting a new one
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
+
+      // Start watching location for live updates
+      locationSubRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: 10, // update every 10 meters moved
+        },
+        (pos) => {
+          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+      );
     } catch {
-      // If getCurrentPositionAsync failed but we already set from last known, keep it
       if (!locationRef.current) {
         setLocationError('Unable to fetch your location.');
       }
@@ -495,6 +507,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsRefreshing(false);
   }, [fetchAlert]);
 
+  // Track whether we've done the initial map animation for user location
+  const hasAnimatedToUserRef = useRef(false);
+
   // Initial load
   useEffect(() => {
     loadAlertCache().finally(fetchAlert);
@@ -508,22 +523,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadCacheMeta().then((meta) => {
       if (meta) setTileCacheMeta(meta);
     });
+
+    // Cleanup location watch on unmount
+    return () => {
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
+    };
   }, [loadAlertCache, fetchAlert, loadCentersCache, fetchCenters, requestLocation]);
 
-  // Animate map when location changes
+  // Animate map on searched location change or first user location fix only
   useEffect(() => {
-    const target = searchedLocation ?? (location ? { ...location, name: 'Your location' } : null);
-    if (!target || !mapRef.current) return;
+    if (searchedLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: searchedLocation.lat,
+        longitude: searchedLocation.lng,
+        latitudeDelta: 0.12,
+        longitudeDelta: 0.12,
+      }, 500);
+    }
+  }, [searchedLocation]);
 
-    const region: Region = {
-      latitude: target.lat,
-      longitude: target.lng,
-      latitudeDelta: 0.12,
-      longitudeDelta: 0.12,
-    };
-
-    mapRef.current.animateToRegion(region, 500);
-  }, [searchedLocation, location]);
+  useEffect(() => {
+    if (location && !hasAnimatedToUserRef.current && mapRef.current) {
+      hasAnimatedToUserRef.current = true;
+      mapRef.current.animateToRegion({
+        latitude: location.lat,
+        longitude: location.lng,
+        latitudeDelta: 0.12,
+        longitudeDelta: 0.12,
+      }, 500);
+    }
+  }, [location]);
 
   const value: AppContextValue = {
     alertData,
