@@ -348,7 +348,7 @@ function App() {
           </div>
 
           <div className="text-center text-slate-500 text-sm border-t border-slate-800 pt-6">
-            <p>{t.projectFrom} <a href="https://bryan-web.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
+            <p>{t.projectFrom} <a href="https://bryan.dxlabs.dev/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
             <p className="mt-1">© {new Date().getFullYear()} {t.appName}. {t.allRightsReserved}</p>
             <p className="mt-2 text-xs">
               {t.followAdvisories}
