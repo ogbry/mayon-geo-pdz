@@ -24,13 +24,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'com.ligtasmayon.app',
-    versionCode: 4,
+    versionCode: 5,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundImage: './assets/adaptive-icon-bg.png',
       backgroundColor: '#050A12',
     },
-    permissions: ['ACCESS_FINE_LOCATION'],
+    permissions: ['ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS'],
     edgeToEdgeEnabled: true,
     config: {
       googleMaps: {

@@ -22,6 +22,7 @@ import {
 import { calculateDistance } from '../utils/geo';
 import { buildOverpassQuery, parseOverpassResponse } from '../utils/overpass';
 import { clearTileCache, downloadTiles, loadCacheMeta } from '../utils/tileCache';
+import { checkAndNotifyAlertChange } from '../services/alertNotifications';
 
 type AppContextValue = {
   // Alert
@@ -175,6 +176,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAlertData(normalized);
       setAlertCachedAt(now);
       await AsyncStorage.setItem(ALERT_CACHE_KEY, JSON.stringify({ data: normalized, cachedAt: now }));
+
+      // Notify if alert level changed since last check
+      checkAndNotifyAlertChange().catch(() => {});
     } catch {
       if (alertDataRef.current) {
         setAlertError('Offline. Showing last cached alert.');

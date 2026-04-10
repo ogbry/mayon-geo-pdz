@@ -90,6 +90,10 @@ export interface Translations {
   sosLocationUnavailable: string;
   sosNoNearbyCenter: string;
 
+  // Notifications
+  alertNotificationTitle: string;
+  alertNotificationUrgent: string;
+
   // Language
   language: string;
 }
@@ -200,6 +204,9 @@ export const translations: Record<Language, Translations> = {
     offlineMapCached: 'Offline map cached',
     downloadingTiles: 'Downloading tiles...',
 
+    alertNotificationTitle: 'Volcano Alert Level',
+    alertNotificationUrgent: 'Take Action',
+
     language: 'Language',
   },
 
@@ -308,6 +315,9 @@ export const translations: Record<Language, Translations> = {
     offlineMapCached: 'Naka-cache ang offline map',
     downloadingTiles: 'Nagda-download ng tiles...',
 
+    alertNotificationTitle: 'Antas ng Alerto sa Bulkan',
+    alertNotificationUrgent: 'Kumilos Na',
+
     language: 'Wika',
   },
 
@@ -415,6 +425,9 @@ export const translations: Record<Language, Translations> = {
     onlineMode: 'Online Mode',
     offlineMapCached: 'Naka-cache an offline map',
     downloadingTiles: 'Nagda-download nin tiles...',
+
+    alertNotificationTitle: 'Lebel nin Alerto sa Bulkan',
+    alertNotificationUrgent: 'Kumilos Na',
 
     language: 'Lengguahe',
   },
