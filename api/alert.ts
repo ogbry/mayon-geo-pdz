@@ -139,7 +139,10 @@ function parseBulletin(html: string, bulletinUrl: string): BulletinDetails {
     return details;
 }
 
+let lastBulletinError: string | null = null;
+
 async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
+    lastBulletinError = null;
     try {
         const listRes = await fetchWithTimeout(
             PHIVOLCS_BULLETIN_LIST,
@@ -152,12 +155,18 @@ async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
             5000,
         );
 
-        if (!listRes.ok) return null;
+        if (!listRes.ok) {
+            lastBulletinError = `list status ${listRes.status}`;
+            return null;
+        }
         const listHtml = await listRes.text();
 
         // Find the first Mayon English bulletin URL
         const urlMatch = listHtml.match(/activity-mvo\?bid=(\d+)&lang=en/);
-        if (!urlMatch) return null;
+        if (!urlMatch) {
+            lastBulletinError = "no bulletin URL in list";
+            return null;
+        }
 
         const bulletinUrl = `${PHIVOLCS_BULLETIN_BASE}/bulletin/${urlMatch[0]}`;
 
@@ -172,10 +181,18 @@ async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
             5000,
         );
 
-        if (!bulletinRes.ok) return null;
+        if (!bulletinRes.ok) {
+            lastBulletinError = `bulletin status ${bulletinRes.status}`;
+            return null;
+        }
         const bulletinHtml = await bulletinRes.text();
-        return parseBulletin(bulletinHtml, bulletinUrl);
-    } catch {
+        const parsed = parseBulletin(bulletinHtml, bulletinUrl);
+        if (!parsed.plume && !parsed.eruption && !parsed.seismicity) {
+            lastBulletinError = "parsed empty";
+        }
+        return parsed;
+    } catch (err) {
+        lastBulletinError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
         return null;
     }
 }
@@ -270,14 +287,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const now = Date.now();
+        const debug = req.query.debug === "1";
+        const noCache = req.query.nocache === "1" || debug;
 
-        if (cache && now - cache.timestamp < CACHE_DURATION) {
+        if (!noCache && cache && now - cache.timestamp < CACHE_DURATION) {
             return res.status(200).json({ ...cache.data, cached: true });
         }
 
         const data = await fetchAlertLevel();
         cache = { data, timestamp: now };
 
+        if (debug) {
+            return res.status(200).json({ ...data, _debug: { bulletinError: lastBulletinError } });
+        }
         return res.status(200).json(data);
     } catch {
         return res.status(200).json({
