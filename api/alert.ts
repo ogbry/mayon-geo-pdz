@@ -1,5 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
+import { Agent, fetch as undiciFetch } from "undici";
+
+// PHIVOLCS has an incomplete SSL cert chain; Node rejects it.
+// This agent skips cert validation — only used for known PHIVOLCS public URLs.
+const insecureAgent = new Agent({
+    connect: { rejectUnauthorized: false },
+});
 
 const SOURCES = [
     {
@@ -141,22 +148,33 @@ function parseBulletin(html: string, bulletinUrl: string): BulletinDetails {
 
 let lastBulletinError: string | null = null;
 
-async function fetchViaProxy(url: string): Promise<string | null> {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetchWithTimeout(proxyUrl, {}, 8000);
-    if (!res.ok) return null;
-    const json = (await res.json()) as { contents?: string };
-    return json?.contents ?? null;
+async function fetchPhivolcsHtml(url: string, ms = 8000): Promise<string | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ms);
+    try {
+        const res = await undiciFetch(url, {
+            dispatcher: insecureAgent,
+            signal: controller.signal,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (compatible; LigtasMayon/1.0)",
+                Accept: "text/html",
+            },
+        });
+        clearTimeout(timeout);
+        if (!res.ok) return null;
+        return await res.text();
+    } catch {
+        clearTimeout(timeout);
+        return null;
+    }
 }
 
 async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
     lastBulletinError = null;
     try {
-        // PHIVOLCS SSL cert chain is incomplete; Vercel's Node rejects it.
-        // Route through the same allorigins proxy already used as HazardHunter fallback.
-        const listHtml = await fetchViaProxy(PHIVOLCS_BULLETIN_LIST);
+        const listHtml = await fetchPhivolcsHtml(PHIVOLCS_BULLETIN_LIST);
         if (!listHtml) {
-            lastBulletinError = "proxy returned no list HTML";
+            lastBulletinError = "failed to fetch bulletin list";
             return null;
         }
 
@@ -168,9 +186,9 @@ async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
         }
 
         const bulletinUrl = `${PHIVOLCS_BULLETIN_BASE}/bulletin/${urlMatch[0]}`;
-        const bulletinHtml = await fetchViaProxy(bulletinUrl);
+        const bulletinHtml = await fetchPhivolcsHtml(bulletinUrl);
         if (!bulletinHtml) {
-            lastBulletinError = "proxy returned no bulletin HTML";
+            lastBulletinError = "failed to fetch bulletin detail";
             return null;
         }
 
