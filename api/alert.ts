@@ -141,25 +141,24 @@ function parseBulletin(html: string, bulletinUrl: string): BulletinDetails {
 
 let lastBulletinError: string | null = null;
 
+async function fetchViaProxy(url: string): Promise<string | null> {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetchWithTimeout(proxyUrl, {}, 8000);
+    if (!res.ok) return null;
+    const json = (await res.json()) as { contents?: string };
+    return json?.contents ?? null;
+}
+
 async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
     lastBulletinError = null;
     try {
-        const listRes = await fetchWithTimeout(
-            PHIVOLCS_BULLETIN_LIST,
-            {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (compatible; LigtasMayon/1.0)",
-                    Accept: "text/html",
-                },
-            },
-            5000,
-        );
-
-        if (!listRes.ok) {
-            lastBulletinError = `list status ${listRes.status}`;
+        // PHIVOLCS SSL cert chain is incomplete; Vercel's Node rejects it.
+        // Route through the same allorigins proxy already used as HazardHunter fallback.
+        const listHtml = await fetchViaProxy(PHIVOLCS_BULLETIN_LIST);
+        if (!listHtml) {
+            lastBulletinError = "proxy returned no list HTML";
             return null;
         }
-        const listHtml = await listRes.text();
 
         // Find the first Mayon English bulletin URL
         const urlMatch = listHtml.match(/activity-mvo\?bid=(\d+)&lang=en/);
@@ -169,23 +168,12 @@ async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
         }
 
         const bulletinUrl = `${PHIVOLCS_BULLETIN_BASE}/bulletin/${urlMatch[0]}`;
-
-        const bulletinRes = await fetchWithTimeout(
-            bulletinUrl,
-            {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (compatible; LigtasMayon/1.0)",
-                    Accept: "text/html",
-                },
-            },
-            5000,
-        );
-
-        if (!bulletinRes.ok) {
-            lastBulletinError = `bulletin status ${bulletinRes.status}`;
+        const bulletinHtml = await fetchViaProxy(bulletinUrl);
+        if (!bulletinHtml) {
+            lastBulletinError = "proxy returned no bulletin HTML";
             return null;
         }
-        const bulletinHtml = await bulletinRes.text();
+
         const parsed = parseBulletin(bulletinHtml, bulletinUrl);
         if (!parsed.plume && !parsed.eruption && !parsed.seismicity) {
             lastBulletinError = "parsed empty";
