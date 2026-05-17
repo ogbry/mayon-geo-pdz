@@ -1,14 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/theme';
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
 
 export default function BulletinCard() {
   const { alertData } = useApp();
+  const { t } = useLanguage();
   const bulletin = alertData?.bulletin;
 
   if (!bulletin) return null;
@@ -21,7 +19,7 @@ export default function BulletinCard() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>24-Hour Observation</Text>
+        <Text style={styles.title}>{t.bulletinTitle}</Text>
         {bulletin.bulletinDate ? <Text style={styles.date}>{bulletin.bulletinDate}</Text> : null}
       </View>
 
@@ -32,11 +30,13 @@ export default function BulletinCard() {
           </View>
           <View style={styles.rowContent}>
             <View style={styles.rowHeader}>
-              <Text style={styles.label}>Ashfall / Plume</Text>
+              <Text style={styles.label}>{t.bulletinAshfall}</Text>
               {bulletin.plumeDirection ? (
                 <View style={styles.directionPill}>
                   <Ionicons name="navigate-outline" size={11} color={Colors.accentLight} />
-                  <Text style={styles.directionText}>{capitalize(bulletin.plumeDirection)}</Text>
+                  <Text style={styles.directionText}>
+                    {t.directions[bulletin.plumeDirection as keyof typeof t.directions] ?? bulletin.plumeDirection}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -51,7 +51,7 @@ export default function BulletinCard() {
             <Ionicons name="flame-outline" size={18} color={Colors.accent} />
           </View>
           <View style={styles.rowContent}>
-            <Text style={styles.label}>Eruption Activity</Text>
+            <Text style={styles.label}>{t.bulletinEruption}</Text>
             <Text style={styles.value}>{bulletin.eruption}</Text>
           </View>
         </View>
@@ -63,7 +63,7 @@ export default function BulletinCard() {
             <Ionicons name="pulse-outline" size={18} color={Colors.blueLight} />
           </View>
           <View style={styles.rowContent}>
-            <Text style={styles.label}>Seismicity</Text>
+            <Text style={styles.label}>{t.bulletinSeismicity}</Text>
             <Text style={styles.value}>{bulletin.seismicity}</Text>
           </View>
         </View>
@@ -75,7 +75,7 @@ export default function BulletinCard() {
             <Ionicons name="warning-outline" size={18} color={Colors.yellowLight} />
           </View>
           <View style={styles.rowContent}>
-            <Text style={styles.label}>Sulfur Dioxide</Text>
+            <Text style={styles.label}>{t.bulletinSulfurDioxide}</Text>
             <Text style={styles.value}>{bulletin.sulfurDioxide}</Text>
           </View>
         </View>
@@ -87,13 +87,13 @@ export default function BulletinCard() {
             <Ionicons name="trending-up-outline" size={18} color={Colors.teal} />
           </View>
           <View style={styles.rowContent}>
-            <Text style={styles.label}>Ground Deformation</Text>
+            <Text style={styles.label}>{t.bulletinGroundDeformation}</Text>
             <Text style={styles.value}>{bulletin.groundDeformation}</Text>
           </View>
         </View>
       ) : null}
 
-      <Text style={styles.source}>Source: PHIVOLCS Bulletin</Text>
+      <Text style={styles.source}>{t.bulletinSource}</Text>
     </View>
   );
 }

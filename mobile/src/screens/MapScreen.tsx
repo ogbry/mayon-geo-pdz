@@ -4,6 +4,7 @@ import MapView, { Circle, Marker, Polyline, UrlTile } from 'react-native-maps';
 import { useApp } from '../context/AppContext';
 import LocationSearchBar from '../components/LocationSearchBar';
 import OfflineMapBanner from '../components/OfflineMapBanner';
+import SearchedLocationCTA from '../components/SearchedLocationCTA';
 import { MAYON_COORDINATES, OSM_TILE_URL, PDZ_RADIUS_KM } from '../constants';
 import { Colors, Spacing } from '../constants/theme';
 import { getTileCachePath } from '../utils/tileCache';
@@ -86,6 +87,7 @@ export default function MapScreen() {
       </View>
 
       <View style={styles.bannerOverlay}>
+        <SearchedLocationCTA />
         <OfflineMapBanner />
       </View>
     </View>

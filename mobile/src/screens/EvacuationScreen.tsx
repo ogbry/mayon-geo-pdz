@@ -26,9 +26,13 @@ export default function EvacuationScreen() {
   const { t } = useLanguage();
 
   const handleCenterPress = useCallback((center: EvacuationCenter) => {
+    // If tapping the already-selected center, this acts as a toggle (handled by handleSelectCenter)
     handleSelectCenter(center);
+  }, [handleSelectCenter]);
+
+  const handleViewOnMap = useCallback(() => {
     navigation.navigate('Map');
-  }, [handleSelectCenter, navigation]);
+  }, [navigation]);
 
   const centersSyncedLabel = formatDate(centersCachedAt);
 
@@ -41,12 +45,7 @@ export default function EvacuationScreen() {
     </View>
   );
 
-  const renderFooter = () => (
-    <View>
-      <RouteInfoCard />
-      <View style={{ height: 40 }} />
-    </View>
-  );
+  const renderFooter = () => <View style={{ height: 40 }} />;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -54,11 +53,16 @@ export default function EvacuationScreen() {
         data={centersWithDistance.slice(0, 30)}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <EvacuationCenterCard
-            center={item}
-            isSelected={selectedCenter?.id === item.id}
-            onPress={() => handleCenterPress(item)}
-          />
+          <View>
+            <EvacuationCenterCard
+              center={item}
+              isSelected={selectedCenter?.id === item.id}
+              onPress={() => handleCenterPress(item)}
+            />
+            {selectedCenter?.id === item.id ? (
+              <RouteInfoCard onViewOnMap={handleViewOnMap} />
+            ) : null}
+          </View>
         )}
         contentContainerStyle={styles.list}
         ListHeaderComponent={renderHeader}
