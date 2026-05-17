@@ -1,3 +1,15 @@
+export type BulletinDetails = {
+  eruption?: string;
+  seismicity?: string;
+  craterGlow?: string;
+  sulfurDioxide?: string;
+  plume?: string;
+  plumeDirection?: string;
+  groundDeformation?: string;
+  bulletinDate?: string;
+  bulletinUrl?: string;
+};
+
 export type AlertResponse = {
   volcano?: string;
   alertLevel: number;
@@ -5,6 +17,7 @@ export type AlertResponse = {
   updatedAt: string;
   source: string;
   cached?: boolean;
+  bulletin?: BulletinDetails;
 };
 
 export type CachePayload<T> = {

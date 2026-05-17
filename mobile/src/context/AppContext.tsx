@@ -215,7 +215,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         const response = await fetch(server, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'LigtasMayon/1.0',
+          },
           body: `data=${encodeURIComponent(query)}`,
           signal: controller.signal,
         });
@@ -259,7 +262,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const url = `${OSRM_API_URL}/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
-      const response = await fetch(url);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to fetch route');
       const data = (await response.json()) as {
         code: string;
@@ -465,14 +471,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     downloadTiles(
       (progress) => setTileDownloadProgress(progress),
       tileAbortRef,
-    ).then(async (completed) => {
-      if (completed) {
-        const meta = await loadCacheMeta();
-        setTileCacheMeta(meta);
-        setIsOfflineMode(true);
-        await AsyncStorage.setItem(OFFLINE_MODE_KEY, 'true');
-      }
-    });
+    )
+      .then(async (completed) => {
+        if (completed) {
+          const meta = await loadCacheMeta();
+          setTileCacheMeta(meta);
+          setIsOfflineMode(true);
+          await AsyncStorage.setItem(OFFLINE_MODE_KEY, 'true');
+        }
+      })
+      .catch(() => {
+        setTileDownloadProgress(null);
+      });
   }, []);
 
   const cancelTileDownload = useCallback(() => {

@@ -41,6 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   web: {
     favicon: './assets/favicon.png',
   },
+  plugins: ['expo-font', 'expo-background-task'],
   extra: {
     eas: {
       projectId: 'eba3926f-d5aa-448d-bd56-6d52e8472e9c',

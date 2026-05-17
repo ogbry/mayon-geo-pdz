@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
@@ -111,27 +111,25 @@ export async function checkAndNotifyAlertChange(): Promise<boolean> {
 TaskManager.defineTask(BACKGROUND_ALERT_TASK, async () => {
   const success = await checkAndNotifyAlertChange();
   return success
-    ? BackgroundFetch.BackgroundFetchResult.NewData
-    : BackgroundFetch.BackgroundFetchResult.Failed;
+    ? BackgroundTask.BackgroundTaskResult.Success
+    : BackgroundTask.BackgroundTaskResult.Failed;
 });
 
-/** Register background fetch to periodically check alert level. */
+/** Register background task to periodically check alert level. */
 export async function registerBackgroundAlertCheck(): Promise<void> {
   const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_ALERT_TASK);
   if (isRegistered) return;
 
-  await BackgroundFetch.registerTaskAsync(BACKGROUND_ALERT_TASK, {
-    minimumInterval: 15 * 60, // 15 minutes (OS may throttle further)
-    stopOnTerminate: false,
-    startOnBoot: true,
+  await BackgroundTask.registerTaskAsync(BACKGROUND_ALERT_TASK, {
+    minimumInterval: 15, // minutes (OS may throttle further)
   });
 }
 
-/** Unregister background fetch. */
+/** Unregister background task. */
 export async function unregisterBackgroundAlertCheck(): Promise<void> {
   const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_ALERT_TASK);
   if (!isRegistered) return;
-  await BackgroundFetch.unregisterTaskAsync(BACKGROUND_ALERT_TASK);
+  await BackgroundTask.unregisterTaskAsync(BACKGROUND_ALERT_TASK);
 }
 
 /**
