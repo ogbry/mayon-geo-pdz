@@ -1,4 +1,5 @@
 export const API_URL = 'https://mayon-geo.vercel.app/api/alert';
+export const CENTERS_API_URL = 'https://mayon-geo.vercel.app/api/centers';
 export const OSRM_API_URL = 'https://router.project-osrm.org/route/v1/driving';
 export const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
 

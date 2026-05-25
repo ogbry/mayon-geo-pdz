@@ -7,20 +7,19 @@ import type { Region } from 'react-native-maps';
 
 import type { AlertResponse, CachePayload, EvacuationCenter, OverpassElement, RouteCoordinate, SearchedLocation, TileCacheMeta, TileDownloadProgress } from '../types';
 import {
-  ALBAY_BOUNDING_BOX,
   ALERT_CACHE_KEY,
   ALERT_DESCRIPTIONS,
   API_URL,
+  CENTERS_API_URL,
   CENTERS_CACHE_KEY,
   MAYON_COORDINATES,
   NOMINATIM_BASE_URL,
   OFFLINE_MODE_KEY,
   OSRM_API_URL,
-  OVERPASS_SERVERS,
   PDZ_RADIUS_KM,
 } from '../constants';
 import { calculateDistance } from '../utils/geo';
-import { buildOverpassQuery, parseOverpassResponse } from '../utils/overpass';
+import { parseOverpassResponse } from '../utils/overpass';
 import { clearTileCache, downloadTiles, loadCacheMeta } from '../utils/tileCache';
 import { checkAndNotifyAlertChange } from '../services/alertNotifications';
 
@@ -206,51 +205,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCentersLoading(true);
     setCentersError(null);
 
-    const query = buildOverpassQuery(ALBAY_BOUNDING_BOX);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    for (const server of OVERPASS_SERVERS) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(CENTERS_API_URL, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-        const response = await fetch(server, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'LigtasMayon/1.0',
-          },
-          body: `data=${encodeURIComponent(query)}`,
-          signal: controller.signal,
-        });
+      if (!response.ok) throw new Error(`API error ${response.status}`);
 
-        clearTimeout(timeoutId);
+      const data = await response.json() as { elements: OverpassElement[] };
+      const parsed = parseOverpassResponse(data);
 
-        if (!response.ok) throw new Error(`Server returned ${response.status}`);
-
-        const text = await response.text();
-        if (text.includes('runtime error') || text.includes('timeout')) {
-          throw new Error('Server busy');
-        }
-
-        const data = JSON.parse(text) as { elements: OverpassElement[] };
-        const parsed = parseOverpassResponse(data);
-
-        setCenters(parsed);
-        setCentersCachedAt(new Date().toISOString());
-        await AsyncStorage.setItem(
-          CENTERS_CACHE_KEY,
-          JSON.stringify({ data: parsed, cachedAt: new Date().toISOString() })
-        );
-
-        setCentersLoading(false);
-        return;
-      } catch {
-        // try next server
-      }
+      setCenters(parsed);
+      setCentersCachedAt(new Date().toISOString());
+      await AsyncStorage.setItem(
+        CENTERS_CACHE_KEY,
+        JSON.stringify({ data: parsed, cachedAt: new Date().toISOString() })
+      );
+    } catch {
+      // Keep showing cached data — don't clear existing centers
+      setCentersError('Unable to refresh. Showing cached data.');
+    } finally {
+      setCentersLoading(false);
     }
-
-    setCentersLoading(false);
-    setCentersError('Servers busy. Please try again later.');
   }, []);
 
   const fetchRoute = useCallback(async (from: RouteCoordinate, to: RouteCoordinate) => {
