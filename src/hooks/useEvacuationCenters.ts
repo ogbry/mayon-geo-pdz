@@ -99,7 +99,7 @@ const parseOverpassResponse = (data: { elements: OverpassElement[] }): Evacuatio
 };
 
 interface UseEvacuationCentersReturn extends EvacuationCentersState {
-    fetchCenters: () => Promise<void>;
+    fetchCenters: (forceRefresh?: boolean) => Promise<void>;
     getCentersWithDistance: (userLat: number, userLng: number) => EvacuationCenter[];
 }
 
