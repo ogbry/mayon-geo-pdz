@@ -3,12 +3,43 @@ import type { EvacuationCenter, EvacuationCentersState, EvacuationCenterType } f
 import { ALBAY_BOUNDING_BOX } from "../utils/constants";
 import { calculateDistance } from "../utils/haversine";
 
-// Multiple Overpass API servers for fallback
+// Expanded list of Overpass API servers — tried in order
 const OVERPASS_SERVERS = [
-    "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ];
+
+const CACHE_KEY = "evacuation_centers_cache";
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+interface CachedCenters {
+    centers: EvacuationCenter[];
+    timestamp: number;
+}
+
+function loadFromCache(): EvacuationCenter[] | null {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const parsed: CachedCenters = JSON.parse(raw);
+        if (Date.now() - parsed.timestamp > CACHE_TTL_MS) return null;
+        return parsed.centers;
+    } catch {
+        return null;
+    }
+}
+
+function saveToCache(centers: EvacuationCenter[]) {
+    try {
+        const payload: CachedCenters = { centers, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    } catch {
+        // Storage quota exceeded — ignore
+    }
+}
 
 const buildOverpassQuery = (bbox: typeof ALBAY_BOUNDING_BOX): string => {
     const { south, west, north, east } = bbox;
@@ -55,7 +86,6 @@ const parseOverpassResponse = (data: { elements: OverpassElement[] }): Evacuatio
         .map((el) => {
             const lat = el.lat ?? el.center?.lat ?? 0;
             const lng = el.lon ?? el.center?.lon ?? 0;
-
             return {
                 id: `${el.type}-${el.id}`,
                 name: el.tags?.name ?? "Unknown",
@@ -74,65 +104,67 @@ interface UseEvacuationCentersReturn extends EvacuationCentersState {
 }
 
 export default function useEvacuationCenters(): UseEvacuationCentersReturn {
+    const cached = loadFromCache();
+
     const [state, setState] = useState<EvacuationCentersState>({
-        centers: [],
+        centers: cached ?? [],
         loading: false,
         error: null,
     });
 
-    const fetchCenters = useCallback(async () => {
+    const fetchCenters = useCallback(async (forceRefresh = false) => {
+        // Return cached data if still fresh and not a forced refresh
+        if (!forceRefresh) {
+            const fresh = loadFromCache();
+            if (fresh) {
+                setState({ centers: fresh, loading: false, error: null });
+                return;
+            }
+        }
+
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
         const query = buildOverpassQuery(ALBAY_BOUNDING_BOX);
 
-        // Try each server until one works
         for (const server of OVERPASS_SERVERS) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                 const response = await fetch(server, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: `data=${encodeURIComponent(query)}`,
                     signal: controller.signal,
                 });
 
                 clearTimeout(timeoutId);
 
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`${response.status}`);
 
                 const text = await response.text();
-
-                // Check if response is an error message
                 if (text.includes("runtime error") || text.includes("timeout")) {
-                    throw new Error("Server busy, trying next...");
+                    throw new Error("Server busy");
                 }
 
                 const data = JSON.parse(text);
                 const centers = parseOverpassResponse(data);
 
-                setState({
-                    centers,
-                    loading: false,
-                    error: null,
-                });
-                return; // Success, exit the loop
+                saveToCache(centers);
+                setState({ centers, loading: false, error: null });
+                return;
             } catch {
-                // Continue to next server
+                // Try next server
             }
         }
 
-        // All servers failed
-        setState({
-            centers: [],
-            loading: false,
-            error: "Servers busy. Please try again later.",
-        });
+        // All servers failed — show cached data if available, with a warning
+        const stale = loadFromCache();
+        if (stale) {
+            setState({ centers: stale, loading: false, error: "Using cached data — servers temporarily unavailable." });
+        } else {
+            setState({ centers: [], loading: false, error: "Unable to load evacuation centers. Tap refresh to try again." });
+        }
     }, []);
 
     const getCentersWithDistance = useCallback(
@@ -147,9 +179,5 @@ export default function useEvacuationCenters(): UseEvacuationCentersReturn {
         [state.centers]
     );
 
-    return {
-        ...state,
-        fetchCenters,
-        getCentersWithDistance,
-    };
+    return { ...state, fetchCenters, getCentersWithDistance };
 }

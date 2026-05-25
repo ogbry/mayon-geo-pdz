@@ -17,8 +17,10 @@ export const PDZ_RADIUS_KM = 6;
 export const ALBAY_BOUNDING_BOX = { south: 12.9, west: 123.2, north: 13.6, east: 124.1 };
 
 export const OVERPASS_SERVERS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 ];
 

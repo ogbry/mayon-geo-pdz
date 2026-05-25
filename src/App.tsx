@@ -65,9 +65,9 @@ function App() {
   // SOS modal
   const [sosOpen, setSosOpen] = useState(false);
 
-  // Fetch evacuation centers on mount
+  // Fetch evacuation centers on mount (uses cache if fresh)
   useEffect(() => {
-    fetchCenters();
+    fetchCenters(false);
   }, [fetchCenters]);
 
   // Calculate distances from searched location (priority) or user location
@@ -218,7 +218,7 @@ function App() {
             routeInfo={{ distance: routeDistance, duration: routeDuration, loading: routeLoading }}
             hasUserLocation={!!referenceLocation}
             userLocation={referenceLocation}
-            onRefresh={fetchCenters}
+            onRefresh={() => fetchCenters(true)}
           />
 
           <SafetyTipsCard alertLevel={alertLevel} />
