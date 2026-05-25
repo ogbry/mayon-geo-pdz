@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    X, Phone, Radio, MapPin, Navigation,
+    X, Phone, Radio, Navigation,
     AlertTriangle, Copy, Check,
 } from "lucide-react";
 
