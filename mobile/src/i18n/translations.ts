@@ -26,6 +26,7 @@ export interface Translations {
   insidePDZ: string;
   outsidePDZ: string;
   searchedLocation: string;
+  myLocation: string;
 
   // Location Search
   searchByAddress: string;
@@ -50,6 +51,7 @@ export interface Translations {
   distance: string;
   duration: string;
   clearRoute: string;
+  getDirections: string;
 
   // Safety
   safetyInformation: string;
@@ -94,6 +96,25 @@ export interface Translations {
   alertNotificationTitle: string;
   alertNotificationUrgent: string;
 
+  // Bulletin
+  bulletinTitle: string;
+  bulletinAshfall: string;
+  bulletinEruption: string;
+  bulletinSeismicity: string;
+  bulletinSulfurDioxide: string;
+  bulletinGroundDeformation: string;
+  bulletinSource: string;
+  directions: {
+    north: string;
+    south: string;
+    east: string;
+    west: string;
+    northeast: string;
+    northwest: string;
+    southeast: string;
+    southwest: string;
+  };
+
   // Language
   language: string;
 }
@@ -121,6 +142,7 @@ export const translations: Record<Language, Translations> = {
     insidePDZ: 'Inside 6km PDZ',
     outsidePDZ: 'Outside 6km PDZ',
     searchedLocation: 'Searched location',
+    myLocation: 'My location',
 
     searchByAddress: 'Search by address...',
     search: 'Search',
@@ -141,6 +163,7 @@ export const translations: Record<Language, Translations> = {
     distance: 'Distance',
     duration: 'Duration',
     clearRoute: 'Clear Route',
+    getDirections: 'Get Directions',
 
     safetyInformation: 'Safety Information',
     safetyPrecautions: 'Safety Precautions',
@@ -207,6 +230,24 @@ export const translations: Record<Language, Translations> = {
     alertNotificationTitle: 'Volcano Alert Level',
     alertNotificationUrgent: 'Take Action',
 
+    bulletinTitle: '24-Hour Observation',
+    bulletinAshfall: 'Ashfall / Plume',
+    bulletinEruption: 'Eruption Activity',
+    bulletinSeismicity: 'Seismicity',
+    bulletinSulfurDioxide: 'Sulfur Dioxide',
+    bulletinGroundDeformation: 'Ground Deformation',
+    bulletinSource: 'Source: PHIVOLCS Bulletin',
+    directions: {
+      north: 'North',
+      south: 'South',
+      east: 'East',
+      west: 'West',
+      northeast: 'Northeast',
+      northwest: 'Northwest',
+      southeast: 'Southeast',
+      southwest: 'Southwest',
+    },
+
     language: 'Language',
   },
 
@@ -232,6 +273,7 @@ export const translations: Record<Language, Translations> = {
     insidePDZ: 'Nasa loob ng 6km PDZ',
     outsidePDZ: 'Nasa labas ng 6km PDZ',
     searchedLocation: 'Hinanap na lokasyon',
+    myLocation: 'Aking lokasyon',
 
     searchByAddress: 'Maghanap ng address...',
     search: 'Hanapin',
@@ -252,6 +294,7 @@ export const translations: Record<Language, Translations> = {
     distance: 'Distansya',
     duration: 'Tagal',
     clearRoute: 'Burahin ang Ruta',
+    getDirections: 'Kunin ang Direksyon',
 
     safetyInformation: 'Impormasyon sa Kaligtasan',
     safetyPrecautions: 'Mga Pag-iingat sa Kaligtasan',
@@ -318,6 +361,24 @@ export const translations: Record<Language, Translations> = {
     alertNotificationTitle: 'Antas ng Alerto sa Bulkan',
     alertNotificationUrgent: 'Kumilos Na',
 
+    bulletinTitle: '24-Oras na Obserbasyon',
+    bulletinAshfall: 'Abo / Plume',
+    bulletinEruption: 'Aktibidad ng Pagputok',
+    bulletinSeismicity: 'Seismicity',
+    bulletinSulfurDioxide: 'Sulfur Dioxide',
+    bulletinGroundDeformation: 'Pagbabago ng Lupa',
+    bulletinSource: 'Pinagmulan: PHIVOLCS Bulletin',
+    directions: {
+      north: 'Hilaga',
+      south: 'Timog',
+      east: 'Silangan',
+      west: 'Kanluran',
+      northeast: 'Hilagang-Silangan',
+      northwest: 'Hilagang-Kanluran',
+      southeast: 'Timog-Silangan',
+      southwest: 'Timog-Kanluran',
+    },
+
     language: 'Wika',
   },
 
@@ -343,6 +404,7 @@ export const translations: Record<Language, Translations> = {
     insidePDZ: 'Yaon sa laog nin 6km PDZ',
     outsidePDZ: 'Yaon sa luwas nin 6km PDZ',
     searchedLocation: 'Hinanap na lokasyon',
+    myLocation: 'Sakuyang lokasyon',
 
     searchByAddress: 'Maghanap nin address...',
     search: 'Hanapon',
@@ -363,6 +425,7 @@ export const translations: Record<Language, Translations> = {
     distance: 'Distansya',
     duration: 'Kahaloy',
     clearRoute: 'Halion an Ruta',
+    getDirections: 'Kuanon an Direksyon',
 
     safetyInformation: 'Impormasyon sa Kaligtasan',
     safetyPrecautions: 'Mga Pag-iingat sa Kaligtasan',
@@ -428,6 +491,24 @@ export const translations: Record<Language, Translations> = {
 
     alertNotificationTitle: 'Lebel nin Alerto sa Bulkan',
     alertNotificationUrgent: 'Kumilos Na',
+
+    bulletinTitle: '24-Oras na Obserbasyon',
+    bulletinAshfall: 'Abo / Plume',
+    bulletinEruption: 'Aktibidad nin Pagputok',
+    bulletinSeismicity: 'Seismicity',
+    bulletinSulfurDioxide: 'Sulfur Dioxide',
+    bulletinGroundDeformation: 'Pagbabago kan Daga',
+    bulletinSource: 'Ginikanan: PHIVOLCS Bulletin',
+    directions: {
+      north: 'Amihanan',
+      south: 'Habagatan',
+      east: 'Sirangan',
+      west: 'Sulnopan',
+      northeast: 'Amihanang-Sirangan',
+      northwest: 'Amihanang-Sulnopan',
+      southeast: 'Habagatang-Sirangan',
+      southwest: 'Habagatang-Sulnopan',
+    },
 
     language: 'Lengguahe',
   },

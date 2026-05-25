@@ -5,13 +5,14 @@ import { formatKm } from '../utils/geo';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/theme';
 
 export default function StatusCard() {
-  const { userDistanceInfo, searchedDistanceInfo, locationError } = useApp();
+  const { userDistanceInfo, searchedDistanceInfo, searchedLocation, locationError } = useApp();
   const { t } = useLanguage();
 
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{t.status}</Text>
 
+      <Text style={styles.searchedLabel}>{t.myLocation}</Text>
       <View style={styles.row}>
         <Text style={styles.label}>{t.distanceFromMayon}</Text>
         <Text style={styles.value}>
@@ -31,8 +32,14 @@ export default function StatusCard() {
       {searchedDistanceInfo ? (
         <View style={styles.searchedSection}>
           <View style={styles.divider} />
+          <Text style={styles.searchedLabel}>{t.searchedLocation}</Text>
+          {searchedLocation ? (
+            <Text style={styles.searchedName} numberOfLines={2}>
+              {searchedLocation.name}
+            </Text>
+          ) : null}
           <View style={styles.row}>
-            <Text style={styles.label}>{t.searchedLocation}</Text>
+            <Text style={styles.label}>{t.distance}</Text>
             <Text style={styles.value}>{formatKm(searchedDistanceInfo.distanceKm)}</Text>
           </View>
           <View style={[styles.pdzBadge, { backgroundColor: searchedDistanceInfo.isInsidePDZ ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)' }]}>
@@ -96,6 +103,16 @@ const styles = StyleSheet.create({
   },
   searchedSection: {
     marginTop: Spacing.sm,
+  },
+  searchedLabel: {
+    ...Typography.label,
+    marginBottom: 2,
+  },
+  searchedName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.sm,
   },
   divider: {
     height: 1,

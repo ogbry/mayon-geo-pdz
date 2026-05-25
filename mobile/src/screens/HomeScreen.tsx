@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { languageNames } from '../i18n/translations';
 import type { Language } from '../i18n/translations';
 import AlertLevelCard from '../components/AlertLevelCard';
+import BulletinCard from '../components/BulletinCard';
 import StatusCard from '../components/StatusCard';
 import SOSButton from '../components/SOSButton';
 import { BorderRadius, Colors, Spacing, Typography } from '../constants/theme';
@@ -52,6 +53,7 @@ export default function HomeScreen() {
       </View>
 
       <AlertLevelCard />
+      <BulletinCard />
       <StatusCard />
       <SOSButton />
 
