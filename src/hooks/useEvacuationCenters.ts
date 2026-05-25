@@ -101,7 +101,11 @@ export default function useEvacuationCenters(): UseEvacuationCentersReturn {
             const centers = parseElements(data.elements ?? []);
 
             saveToCache(centers);
-            setState({ centers, loading: false, error: null });
+            setState({
+                centers,
+                loading: false,
+                error: data.isStatic ? "Showing known centers — live data temporarily unavailable." : null,
+            });
         } catch {
             // Fall back to stale cache if available
             const stale = loadFromCache();

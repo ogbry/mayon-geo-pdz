@@ -5,43 +5,49 @@ const OVERPASS_SERVERS = [
     "https://overpass-api.de/api/interpreter",
     "https://z.overpass-api.de/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ];
 
 const BBOX = { south: 12.9, west: 123.2, north: 13.6, east: 124.1 };
 
-const QUERY = `
-[out:json][timeout:30];
-(
-  node["amenity"="shelter"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["amenity"="shelter"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  node["amenity"="school"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["amenity"="school"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  node["amenity"="hospital"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["amenity"="hospital"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  node["amenity"="townhall"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["amenity"="townhall"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  node["office"="government"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["office"="government"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  node["emergency"="shelter"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-  way["emergency"="shelter"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});
-);
-out center;
-`.trim();
+const QUERY = `[out:json][timeout:25];(node["amenity"~"shelter|school|hospital|townhall"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});way["amenity"~"shelter|school|hospital|townhall"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});node["office"="government"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east});node["emergency"="shelter"](${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east}););out center;`;
 
-// In-memory cache (persists across warm function invocations)
-let cache: { data: object[]; timestamp: number } | null = null;
+// Known Albay evacuation centers — static fallback when all APIs fail
+const STATIC_FALLBACK = [
+    { id: "static-1",  name: "Legazpi City Sports Complex",           type: "shelter",    lat: 13.1391, lng: 123.7438 },
+    { id: "static-2",  name: "Daraga Municipal Gymnasium",            type: "government", lat: 13.1564, lng: 123.6994 },
+    { id: "static-3",  name: "Camalig Municipal Gymnasium",           type: "government", lat: 13.1748, lng: 123.6583 },
+    { id: "static-4",  name: "Guinobatan Municipal Gymnasium",        type: "government", lat: 13.1820, lng: 123.5951 },
+    { id: "static-5",  name: "Ligao City Sports Complex",             type: "shelter",    lat: 13.2290, lng: 123.5240 },
+    { id: "static-6",  name: "Santo Domingo Municipal Hall",          type: "government", lat: 13.2534, lng: 123.7260 },
+    { id: "static-7",  name: "Tabaco City Gymnasium",                 type: "shelter",    lat: 13.3580, lng: 123.7337 },
+    { id: "static-8",  name: "Malilipot Municipal Hall",              type: "government", lat: 13.2910, lng: 123.7220 },
+    { id: "static-9",  name: "Sto. Domingo Central School",           type: "school",     lat: 13.2521, lng: 123.7264 },
+    { id: "static-10", name: "Legazpi City Hall",                     type: "government", lat: 13.1390, lng: 123.7340 },
+    { id: "static-11", name: "Albay Capitol",                         type: "government", lat: 13.1492, lng: 123.7360 },
+    { id: "static-12", name: "Bicol Medical Center",                  type: "hospital",   lat: 13.1528, lng: 123.7356 },
+    { id: "static-13", name: "Camalig Central School",                type: "school",     lat: 13.1762, lng: 123.6589 },
+    { id: "static-14", name: "Guinobatan Central School",             type: "school",     lat: 13.1831, lng: 123.5967 },
+    { id: "static-15", name: "Daraga Central School",                 type: "school",     lat: 13.1579, lng: 123.6998 },
+];
+
+// In-memory cache
+let cache: { elements: object[]; timestamp: number; isStatic?: boolean } | null = null;
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
-async function fetchFromOverpass(): Promise<object[]> {
+async function tryFetchOverpass(): Promise<object[] | null> {
     for (const server of OVERPASS_SERVERS) {
+        // Try POST
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 20000);
+            const timeout = setTimeout(() => controller.abort(), 12000);
 
             const res = await fetch(server, {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "LigtasMayonApp/3.0 (https://mayon-geo.vercel.app; safety monitoring)",
+                    "Accept": "application/json",
+                },
                 body: `data=${encodeURIComponent(QUERY)}`,
                 signal: controller.signal,
             });
@@ -49,19 +55,34 @@ async function fetchFromOverpass(): Promise<object[]> {
             clearTimeout(timeout);
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const text = await res.text();
-            if (text.includes("runtime error") || text.includes("timeout")) {
-                throw new Error("Server busy");
-            }
-
-            const json = JSON.parse(text);
-            return json.elements ?? [];
+            const json = await res.json() as { elements: object[] };
+            if (json.elements?.length) return json.elements;
         } catch {
-            // Try next server
+            // Try GET fallback for same server
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 12000);
+
+                const url = `${server}?data=${encodeURIComponent(QUERY)}`;
+                const res = await fetch(url, {
+                    headers: {
+                        "User-Agent": "LigtasMayonApp/3.0 (https://mayon-geo.vercel.app; safety monitoring)",
+                        "Accept": "application/json",
+                    },
+                    signal: controller.signal,
+                });
+
+                clearTimeout(timeout);
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json() as { elements: object[] };
+                if (json.elements?.length) return json.elements;
+            } catch {
+                // Next server
+            }
         }
     }
-    throw new Error("All Overpass servers failed");
+    return null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -72,40 +93,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: "Method not allowed" });
     }
 
-    try {
-        const now = Date.now();
+    const now = Date.now();
 
-        // Serve from cache if still fresh
-        if (cache && now - cache.timestamp < CACHE_TTL) {
-            return res.status(200).json({
-                elements: cache.data,
-                cached: true,
-                cachedAt: new Date(cache.timestamp).toISOString(),
-            });
-        }
-
-        const elements = await fetchFromOverpass();
-        cache = { data: elements, timestamp: now };
-
-        // Tell CDN to cache for 6 hours too
-        res.setHeader("Cache-Control", "s-maxage=21600, stale-while-revalidate");
-
+    // Serve warm cache
+    if (cache && now - cache.timestamp < CACHE_TTL) {
         return res.status(200).json({
-            elements,
-            cached: false,
-            cachedAt: new Date(now).toISOString(),
+            elements: cache.elements,
+            cached: true,
+            isStatic: cache.isStatic ?? false,
         });
-    } catch {
-        // Return stale cache rather than failing
-        if (cache) {
-            return res.status(200).json({
-                elements: cache.data,
-                cached: true,
-                stale: true,
-                cachedAt: new Date(cache.timestamp).toISOString(),
-            });
-        }
-
-        return res.status(503).json({ error: "Unable to fetch evacuation centers" });
     }
+
+    // Try live Overpass fetch
+    const elements = await tryFetchOverpass();
+
+    if (elements) {
+        cache = { elements, timestamp: now, isStatic: false };
+        res.setHeader("Cache-Control", "s-maxage=21600, stale-while-revalidate");
+        return res.status(200).json({ elements, cached: false, isStatic: false });
+    }
+
+    // All live sources failed — serve stale cache if available
+    if (cache) {
+        return res.status(200).json({
+            elements: cache.elements,
+            cached: true,
+            isStatic: cache.isStatic ?? false,
+        });
+    }
+
+    // Last resort — static fallback dataset
+    cache = { elements: STATIC_FALLBACK, timestamp: now, isStatic: true };
+    return res.status(200).json({ elements: STATIC_FALLBACK, cached: false, isStatic: true });
 }
