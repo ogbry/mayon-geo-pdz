@@ -1,5 +1,5 @@
 import React from "react";
-import { Mountain, Menu, X, Globe } from "lucide-react";
+import { Mountain, Menu, X, Globe, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { clsx } from "clsx";
 import { useLanguage, languageNames } from "../i18n";
@@ -7,9 +7,10 @@ import type { Language } from "../i18n";
 
 interface HeaderProps {
     alertLevel?: number | null;
+    onSOSClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ alertLevel }) => {
+const Header: React.FC<HeaderProps> = ({ alertLevel, onSOSClick }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [langMenuOpen, setLangMenuOpen] = useState(false);
     const { language, setLanguage, t } = useLanguage();
@@ -69,16 +70,16 @@ const Header: React.FC<HeaderProps> = ({ alertLevel }) => {
                             {langMenuOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)} />
-                                    <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 overflow-hidden">
+                                    <div className="absolute right-0 mt-2 w-36 bg-[#0e1623] border border-white/10 rounded-xl shadow-2xl shadow-black/60 z-20 overflow-hidden">
                                         {(Object.keys(languageNames) as Language[]).map((lang) => (
                                             <button
                                                 key={lang}
                                                 onClick={() => handleLanguageChange(lang)}
                                                 className={clsx(
-                                                    "w-full px-3 py-2 text-left text-sm transition-colors",
+                                                    "w-full px-4 py-2.5 text-left text-sm transition-colors border-0 outline-none",
                                                     language === lang
-                                                        ? "bg-orange-500/10 text-orange-400"
-                                                        : "text-slate-300 hover:bg-slate-700"
+                                                        ? "!bg-orange-500/15 text-orange-400 font-medium"
+                                                        : "!bg-transparent text-slate-400 hover:!bg-white/5 hover:text-white"
                                                 )}
                                             >
                                                 {languageNames[lang]}
@@ -90,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({ alertLevel }) => {
                         </div>
                     </nav>
 
-                    {/* Alert Badge + Mobile Menu */}
+                    {/* Alert Badge + SOS + Mobile Menu */}
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                         {alertLevel !== null && alertLevel !== undefined && (
                             <div className={clsx(
@@ -111,6 +112,17 @@ const Header: React.FC<HeaderProps> = ({ alertLevel }) => {
                                 <span className="sm:hidden">{t.alertLevelShort}</span>
                                 {alertLevel}
                             </div>
+                        )}
+
+                        {/* SOS button — desktop */}
+                        {onSOSClick && (
+                            <button
+                                onClick={onSOSClick}
+                                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-lg shadow-rose-900/40"
+                            >
+                                <AlertTriangle size={12} />
+                                SOS
+                            </button>
                         )}
 
                         {/* Mobile menu button */}

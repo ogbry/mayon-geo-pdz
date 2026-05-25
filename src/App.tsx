@@ -9,6 +9,9 @@ import LocationSearch from "./components/LocationSearch";
 import EvacuationPanel from "./components/EvacuationPanel";
 import SafetyTipsCard from "./components/SafetyTipsCard";
 import MobileNav from "./components/MobileNav";
+import ObservationCard from "./components/ObservationCard";
+import EmergencyContacts from "./components/EmergencyContacts";
+import SOSModal, { SOSButton } from "./components/SOSModal";
 import useGeolocation from "./hooks/useGeolocation";
 import useLocationSearch from "./hooks/useLocationSearch";
 import useEvacuationCenters from "./hooks/useEvacuationCenters";
@@ -59,6 +62,9 @@ function App() {
   // Evacuation UI state
   const [selectedCenter, setSelectedCenter] = useState<EvacuationCenter | null>(null);
 
+  // SOS modal
+  const [sosOpen, setSosOpen] = useState(false);
+
   // Fetch evacuation centers on mount
   useEffect(() => {
     fetchCenters();
@@ -67,8 +73,6 @@ function App() {
   // Calculate distances from searched location (priority) or user location
   const centersWithDistance = useMemo(() => {
     if (rawCenters.length === 0) return rawCenters;
-
-    // Prioritize searched location, fall back to user location
     if (searchedLocation) {
       return getCentersWithDistance(searchedLocation.lat, searchedLocation.lng);
     }
@@ -78,66 +82,49 @@ function App() {
     return rawCenters;
   }, [coordinates, searchedLocation, rawCenters, getCentersWithDistance]);
 
-  // Determine the reference location for routing (searched takes priority)
+  // Determine the reference location for routing
   const referenceLocation = useMemo(() => {
-    if (searchedLocation) {
-      return { lat: searchedLocation.lat, lng: searchedLocation.lng };
-    }
-    if (coordinates) {
-      return { lat: coordinates.latitude, lng: coordinates.longitude };
-    }
+    if (searchedLocation) return { lat: searchedLocation.lat, lng: searchedLocation.lng };
+    if (coordinates) return { lat: coordinates.latitude, lng: coordinates.longitude };
     return null;
   }, [searchedLocation, coordinates]);
 
-  // Handle center selection - trigger routing from reference location
+  // Nearest center (first sorted by distance)
+  const nearestCenter = centersWithDistance.length > 0 ? centersWithDistance[0] : null;
+
+  // Handle center selection
   const handleSelectCenter = useCallback(
     (center: EvacuationCenter) => {
       if (!referenceLocation) return;
-
       setSelectedCenter(center);
       getRoute(referenceLocation, { lat: center.lat, lng: center.lng });
     },
     [referenceLocation, getRoute]
   );
 
-  // Clear selected center and route
   const handleClearSelection = useCallback(() => {
     setSelectedCenter(null);
     clearRoute();
   }, [clearRoute]);
 
-  // Calculate distance for user's GPS location
+  // Distance for user GPS location
   const userDistanceInfo = useMemo(() => {
     if (!coordinates) return null;
-
     const dist = calculateDistance(
-      coordinates.latitude,
-      coordinates.longitude,
-      MAYON_COORDINATES.lat,
-      MAYON_COORDINATES.lng
+      coordinates.latitude, coordinates.longitude,
+      MAYON_COORDINATES.lat, MAYON_COORDINATES.lng
     );
-
-    return {
-      distanceKm: dist,
-      isInsidePDZ: dist <= PDZ_RADIUS_KM,
-    };
+    return { distanceKm: dist, isInsidePDZ: dist <= PDZ_RADIUS_KM };
   }, [coordinates]);
 
-  // Calculate distance for searched location
+  // Distance for searched location
   const searchedDistanceInfo = useMemo(() => {
     if (!searchedLocation) return null;
-
     const dist = calculateDistance(
-      searchedLocation.lat,
-      searchedLocation.lng,
-      MAYON_COORDINATES.lat,
-      MAYON_COORDINATES.lng
+      searchedLocation.lat, searchedLocation.lng,
+      MAYON_COORDINATES.lat, MAYON_COORDINATES.lng
     );
-
-    return {
-      distanceKm: dist,
-      isInsidePDZ: dist <= PDZ_RADIUS_KM,
-    };
+    return { distanceKm: dist, isInsidePDZ: dist <= PDZ_RADIUS_KM };
   }, [searchedLocation]);
 
   const loading = !loaded;
@@ -146,7 +133,7 @@ function App() {
   return (
     <BackgroundLayout>
       {/* Sticky Header */}
-      <Header alertLevel={alertLevel} />
+      <Header alertLevel={alertLevel} onSOSClick={() => setSosOpen(true)} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
@@ -166,33 +153,20 @@ function App() {
 
         {/* Main Grid: Map + Info Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Map - Takes 2/3 on large screens */}
+          {/* Map — 2/3 */}
           <div id="map" className="lg:col-span-2 order-1">
-            <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+            <div className="glass-card rounded-2xl border border-white/[0.07] overflow-hidden">
               <MapComponent
-                userLocation={
-                  coordinates
-                    ? { lat: coordinates.latitude, lng: coordinates.longitude }
-                    : undefined
-                }
-                searchedLocation={
-                  searchedLocation
-                    ? {
-                        lat: searchedLocation.lat,
-                        lng: searchedLocation.lng,
-                        name: searchedLocation.name,
-                      }
-                    : undefined
-                }
+                userLocation={coordinates ? { lat: coordinates.latitude, lng: coordinates.longitude } : undefined}
+                searchedLocation={searchedLocation ? { lat: searchedLocation.lat, lng: searchedLocation.lng, name: searchedLocation.name } : undefined}
                 selectedCenter={selectedCenter}
                 routeCoordinates={routeCoordinates}
               />
             </div>
           </div>
 
-          {/* Right Sidebar - Info Cards */}
+          {/* Right Sidebar */}
           <div className="lg:col-span-1 space-y-4 order-2">
-            {/* Alert Level */}
             <AlertLevelCard
               level={alertLevel}
               lastUpdated={alertLastUpdated}
@@ -201,7 +175,6 @@ function App() {
               onRefresh={refetchAlert}
             />
 
-            {/* Status Cards */}
             <StatusCard
               loading={loading}
               error={errorMsg}
@@ -224,6 +197,15 @@ function App() {
           </div>
         </div>
 
+        {/* Observation Card — full width */}
+        <div className="mb-6">
+          <ObservationCard
+            level={alertLevel}
+            lastUpdated={alertLastUpdated}
+            loading={alertLoading}
+          />
+        </div>
+
         {/* Bottom Row: Evacuation Centers | Safety Tips */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <EvacuationPanel
@@ -233,11 +215,7 @@ function App() {
             onSelectCenter={handleSelectCenter}
             onClearSelection={handleClearSelection}
             selectedCenter={selectedCenter}
-            routeInfo={{
-              distance: routeDistance,
-              duration: routeDuration,
-              loading: routeLoading,
-            }}
+            routeInfo={{ distance: routeDistance, duration: routeDuration, loading: routeLoading }}
             hasUserLocation={!!referenceLocation}
             userLocation={referenceLocation}
             onRefresh={fetchCenters}
@@ -246,119 +224,42 @@ function App() {
           <SafetyTipsCard alertLevel={alertLevel} />
         </div>
 
-        {/* Emergency Contacts & Resources */}
-        <footer id="contacts" className="border-t border-slate-800 pt-8 pb-6">
-          <h3 className="text-lg font-semibold text-white mb-6">{t.emergencyContacts}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {/* PHIVOLCS */}
-            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
-              <h4 className="text-white font-medium mb-3">PHIVOLCS</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="tel:+6328426146879"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">Trunkline:</span> (02) 8426-1468 to 79
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.phivolcs.dost.gov.ph"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">{t.website}:</span> phivolcs.dost.gov.ph
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.facebook.com/PHIVOLCS"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">Facebook:</span> /PHIVOLCS
-                  </a>
-                </li>
-              </ul>
-            </div>
+        {/* Emergency Contacts */}
+        <footer className="border-t border-white/[0.06] pt-8 pb-6">
+          <EmergencyContacts />
 
-            {/* Mayon Volcano Observatory */}
-            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
-              <h4 className="text-white font-medium mb-3">Mayon Volcano Observatory</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="tel:+63528242383"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">{t.hotline}:</span> (052) 824-2383
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.phivolcs.dost.gov.ph/mayon-volcano-observatory/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">Info:</span> MVO Page
-                  </a>
-                </li>
-                <li className="text-slate-500">
-                  {t.locatedAt}
-                </li>
-              </ul>
-            </div>
-
-            {/* Emergency Hotlines */}
-            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
-              <h4 className="text-white font-medium mb-3">Emergency Hotlines</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="tel:911"
-                    className="text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-rose-400">{t.nationalEmergency}:</span> 911
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="tel:143"
-                    className="text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-rose-400">{t.redCross}:</span> 143
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.albay.gov.ph/contact/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2"
-                  >
-                    <span className="text-blue-400">Albay Gov:</span> albay.gov.ph/contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="text-center text-slate-500 text-sm border-t border-slate-800 pt-6">
-            <p>{t.projectFrom} <a href="https://bryan.dxlabs.dev/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Bryan Alfuente</a></p>
-            <p className="mt-1">© {new Date().getFullYear()} {t.appName}. {t.allRightsReserved}</p>
-            <p className="mt-2 text-xs">
-              {t.followAdvisories}
+          <div className="text-center text-slate-600 text-sm border-t border-white/[0.05] pt-6">
+            <p>
+              {t.projectFrom}{" "}
+              <a
+                href="https://bryan.dxlabs.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Bryan Alfuente
+              </a>
             </p>
+            <p className="mt-1">© {new Date().getFullYear()} {t.appName}. {t.allRightsReserved}</p>
+            <p className="mt-2 text-xs text-slate-700">{t.followAdvisories}</p>
           </div>
         </footer>
       </main>
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />
+
+      {/* SOS Floating Button */}
+      <SOSButton onClick={() => setSosOpen(true)} />
+
+      {/* SOS Modal */}
+      <SOSModal
+        isOpen={sosOpen}
+        onClose={() => setSosOpen(false)}
+        userLocation={referenceLocation}
+        nearestCenterName={nearestCenter?.name ?? null}
+        nearestCenterCoords={nearestCenter ? { lat: nearestCenter.lat, lng: nearestCenter.lng } : null}
+      />
     </BackgroundLayout>
   );
 }

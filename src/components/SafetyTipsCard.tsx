@@ -68,9 +68,9 @@ const SafetyTipsCard: React.FC<SafetyTipsCardProps> = ({ alertLevel }) => {
     const isHighAlert = alertLevel != null && alertLevel >= 3;
 
     return (
-        <div id="safety" className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+        <div id="safety" className="glass-card rounded-2xl border border-white/[0.08] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
                     <ShieldAlert size={16} className={isHighAlert ? "text-orange-400" : "text-amber-400"} />
                     <span className="text-sm font-medium text-slate-300">{t.safetyPrecautions}</span>

@@ -99,12 +99,12 @@ export default function useVolcanoAlert(): VolcanoAlertState & { refetch: () => 
                 error: null,
             });
         } catch {
-            // Use fallback on error
+            // API unreachable — use hardcoded fallback
             const alertInfo = getAlertInfo(FALLBACK.level);
             setState({
                 level: FALLBACK.level,
                 description: alertInfo.short,
-                lastUpdated: `${FALLBACK.date} (offline)`,
+                lastUpdated: `${FALLBACK.date} (last known)`,
                 source: "fallback",
                 loading: false,
                 error: null,

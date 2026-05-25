@@ -98,9 +98,9 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
     };
 
     return (
-        <div id="evacuation" className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+        <div id="evacuation" className="glass-card rounded-2xl border border-white/[0.08] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
                     <Shield size={16} className="text-orange-400" />
                     <span className="text-sm font-medium text-slate-300">{t.evacuationCenters}</span>
@@ -123,11 +123,19 @@ const EvacuationPanel: React.FC<EvacuationPanelProps> = ({
             {/* Content */}
             <div className="p-4">
 
-            {/* Loading State */}
+            {/* Skeleton Loading State */}
             {loading && (
-                <div className="flex items-center justify-center py-8 text-gray-400">
-                    <Loader2 size={24} className="animate-spin mr-2" />
-                    <span>{t.loadingCenters}</span>
+                <div className="space-y-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] animate-pulse">
+                            <div className="w-9 h-9 rounded-lg bg-slate-800 flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-3 bg-slate-800 rounded-full w-3/4" />
+                                <div className="h-2.5 bg-slate-800/60 rounded-full w-1/2" />
+                            </div>
+                            <div className="w-5 h-5 rounded-full bg-slate-800 flex-shrink-0" />
+                        </div>
+                    ))}
                 </div>
             )}
 
