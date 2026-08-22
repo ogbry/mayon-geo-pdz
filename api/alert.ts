@@ -8,6 +8,8 @@ const insecureAgent = new Agent({
     connect: { rejectUnauthorized: false },
 });
 
+// Secondary source only. HazardHunterPH lags behind PHIVOLCS by weeks/months,
+// so it is used solely when wovodat is unreachable.
 const SOURCES = [
     {
         url: "https://hazardhunter.georisk.gov.ph/monitoring/volcano",
@@ -19,8 +21,8 @@ const PHIVOLCS_BULLETIN_LIST = "https://wovodat.phivolcs.dost.gov.ph/bulletin/li
 const PHIVOLCS_BULLETIN_BASE = "https://wovodat.phivolcs.dost.gov.ph";
 
 const FALLBACK = {
-    level: 3,
-    date: "January 2026",
+    level: 2,
+    date: "August 22, 2026",
     source: "fallback",
 };
 
@@ -34,6 +36,7 @@ interface BulletinDetails {
     groundDeformation?: string;
     bulletinDate?: string;
     bulletinUrl?: string;
+    statusText?: string;
 }
 
 interface AlertResponse {
@@ -111,6 +114,29 @@ function extractPlumeDirection(plumeText: string): string | undefined {
     return match ? match[0].toLowerCase() : undefined;
 }
 
+const MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+];
+
+// "22 August 2026" -> "August 22, 2026"; anything else is passed through as-is.
+function formatBulletinDate(raw: string): string {
+    const m = raw.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+    if (!m) return raw;
+    const month = MONTHS.find((name) => name.toLowerCase() === m[2].toLowerCase());
+    if (!month) return raw;
+    return `${month} ${parseInt(m[1], 10)}, ${m[3]}`;
+}
+
+// The list page carries a live alert-level ticker for every monitored volcano:
+//   <span class="mvo-scroll-level scroll-item">Mayon - 2</span>
+function parseTickerLevel(html: string): number | null {
+    const match = html.match(/mvo-scroll-level[^>]*>\s*Mayon\s*-\s*(\d)/i);
+    if (!match) return null;
+    const level = parseInt(match[1], 10);
+    return level >= 0 && level <= 5 ? level : null;
+}
+
 function parseBulletin(html: string, bulletinUrl: string): BulletinDetails {
     const $ = cheerio.load(html);
     const details: BulletinDetails = { bulletinUrl };
@@ -139,11 +165,25 @@ function parseBulletin(html: string, bulletinUrl: string): BulletinDetails {
         details.plumeDirection = extractPlumeDirection(details.plume);
     }
 
-    // Try to find bulletin date in header
-    const dateMatch = $("body").text().match(/Summary of 24Hr Observation[^\d]*(\d{1,2}\s+[A-Za-z]+\s+\d{4})/i);
-    if (dateMatch) details.bulletinDate = dateMatch[1];
+    // Header reads: "Date: 22 August 2026 (Decreased Unrest) ALERT LEVEL 2"
+    const bodyText = $("body").text().replace(/\s+/g, " ");
+
+    const dateMatch = bodyText.match(/Date:\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})/i);
+    if (dateMatch) details.bulletinDate = formatBulletinDate(dateMatch[1]);
+
+    const statusMatch = bodyText.match(/\(([^()]*(?:Unrest|Eruption)[^()]*)\)/i);
+    if (statusMatch) details.statusText = statusMatch[1].trim();
 
     return details;
+}
+
+// The bulletin itself states the official alert level, e.g. "ALERT LEVEL 2".
+function parseBulletinLevel(html: string): number | null {
+    const text = cheerio.load(html)("body").text().replace(/\s+/g, " ");
+    const match = text.match(/ALERT\s*LEVEL\s*(\d)/i);
+    if (!match) return null;
+    const level = parseInt(match[1], 10);
+    return level >= 0 && level <= 5 ? level : null;
 }
 
 let lastBulletinError: string | null = null;
@@ -169,44 +209,73 @@ async function fetchPhivolcsHtml(url: string, ms = 8000): Promise<string | null>
     }
 }
 
-async function fetchLatestBulletin(): Promise<BulletinDetails | null> {
+interface PhivolcsResult {
+    level: number | null;
+    date: string | null;
+    bulletin: BulletinDetails | null;
+}
+
+// PHIVOLCS (wovodat) is the authoritative source: it publishes a new Mayon
+// bulletin daily, and the list page's ticker mirrors the current alert level.
+async function fetchPhivolcs(): Promise<PhivolcsResult> {
     lastBulletinError = null;
+    const empty: PhivolcsResult = { level: null, date: null, bulletin: null };
+
     try {
         const listHtml = await fetchPhivolcsHtml(PHIVOLCS_BULLETIN_LIST);
         if (!listHtml) {
             lastBulletinError = "failed to fetch bulletin list";
-            return null;
+            return empty;
         }
+
+        const tickerLevel = parseTickerLevel(listHtml);
 
         // Find the first Mayon English bulletin URL
         const urlMatch = listHtml.match(/activity-mvo\?bid=(\d+)&lang=en/);
         if (!urlMatch) {
             lastBulletinError = "no bulletin URL in list";
-            return null;
+            return { level: tickerLevel, date: null, bulletin: null };
         }
 
         const bulletinUrl = `${PHIVOLCS_BULLETIN_BASE}/bulletin/${urlMatch[0]}`;
         const bulletinHtml = await fetchPhivolcsHtml(bulletinUrl);
         if (!bulletinHtml) {
             lastBulletinError = "failed to fetch bulletin detail";
-            return null;
+            return { level: tickerLevel, date: null, bulletin: null };
         }
 
         const parsed = parseBulletin(bulletinHtml, bulletinUrl);
         if (!parsed.plume && !parsed.eruption && !parsed.seismicity) {
             lastBulletinError = "parsed empty";
         }
-        return parsed;
+
+        // The bulletin's own "ALERT LEVEL n" wins; the ticker is the backstop.
+        const level = parseBulletinLevel(bulletinHtml) ?? tickerLevel;
+
+        return { level, date: parsed.bulletinDate ?? null, bulletin: parsed };
     } catch (err) {
         lastBulletinError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-        return null;
+        return empty;
     }
 }
 
 // ---- Fetch Logic ----
 async function fetchAlertLevel(): Promise<AlertResponse> {
-    // Run alert + bulletin in parallel
-    const bulletinPromise = fetchLatestBulletin();
+    const phivolcs = await fetchPhivolcs();
+
+    if (phivolcs.level !== null) {
+        return {
+            volcano: "Mayon",
+            alertLevel: phivolcs.level,
+            description: ALERT_DESCRIPTIONS[phivolcs.level],
+            updatedAt: phivolcs.date || new Date().toISOString().split("T")[0],
+            source: "PHIVOLCS Volcano Bulletin",
+            cached: false,
+            ...(phivolcs.bulletin && { bulletin: phivolcs.bulletin }),
+        };
+    }
+
+    const bulletinPromise = Promise.resolve(phivolcs.bulletin);
 
     for (const source of SOURCES) {
         try {
