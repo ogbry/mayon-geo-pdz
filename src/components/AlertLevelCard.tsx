@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { AlertTriangle, Activity, RefreshCw, ExternalLink, Zap } from "lucide-react";
 import { getAlertInfo } from "../hooks/useVolcanoAlert";
+import { PHIVOLCS_BULLETIN_URL } from "../utils/constants";
 import { useLanguage } from "../i18n";
 
 interface AlertLevelCardProps {
@@ -112,7 +113,7 @@ const AlertLevelCard: React.FC<AlertLevelCardProps> = ({ level, lastUpdated, loa
                             <p className="text-xs text-slate-500">{t.checkPhivolcs}</p>
                         </div>
                         <a
-                            href="https://www.phivolcs.dost.gov.ph/index.php/mayon-volcano-bulletin-menu"
+                            href={PHIVOLCS_BULLETIN_URL}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
@@ -175,7 +176,7 @@ const AlertLevelCard: React.FC<AlertLevelCardProps> = ({ level, lastUpdated, loa
                             <div className="flex items-center justify-between text-[11px] text-slate-500 mb-3 px-0.5">
                                 <span>{t.updated}: <span className="text-slate-400">{lastUpdated}</span></span>
                                 <a
-                                    href="https://www.phivolcs.dost.gov.ph/index.php/mayon-volcano-bulletin-menu"
+                                    href={PHIVOLCS_BULLETIN_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-1 text-slate-500 hover:text-orange-400 transition-colors"

@@ -93,6 +93,9 @@ export interface Translations {
     allRightsReserved: string;
     followAdvisories: string;
     projectFrom: string;
+    getAndroidApp: string;
+    androidAppSubtitle: string;
+    install: string;
 
     // Language
     language: string;
@@ -219,6 +222,9 @@ export const translations: Record<Language, Translations> = {
         allRightsReserved: "All rights reserved.",
         followAdvisories: "Always follow official advisories from local authorities and PHIVOLCS.",
         projectFrom: "A project from",
+        getAndroidApp: "Get the Android app",
+        androidAppSubtitle: "Alerts and evacuation centers on your phone",
+        install: "Install",
 
         // Language
         language: "Language",
@@ -344,6 +350,9 @@ export const translations: Record<Language, Translations> = {
         allRightsReserved: "All rights reserved.",
         followAdvisories: "Laging sundin ang opisyal na advisories mula sa local authorities at PHIVOLCS.",
         projectFrom: "Isang proyekto mula kay",
+        getAndroidApp: "Kunin ang Android app",
+        androidAppSubtitle: "Mga alerto at evacuation center sa iyong telepono",
+        install: "I-install",
 
         // Language
         language: "Wika",
@@ -469,6 +478,9 @@ export const translations: Record<Language, Translations> = {
         allRightsReserved: "All rights reserved.",
         followAdvisories: "Pirmi sunudon an opisyal na advisories hali sa local authorities asin PHIVOLCS.",
         projectFrom: "Sarong proyekto hali ki",
+        getAndroidApp: "Kuanon an Android app",
+        androidAppSubtitle: "Mga alerto asin evacuation center sa saimong selpon",
+        install: "I-install",
 
         // Language
         language: "Lengguahe",

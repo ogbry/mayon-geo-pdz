@@ -2,6 +2,7 @@ import React from "react";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { Telescope, Flame, Wind, Activity, ExternalLink, Clock } from "lucide-react";
+import { PHIVOLCS_BULLETIN_URL } from "../utils/constants";
 
 interface ObservationCardProps {
     level: number | null;
@@ -102,7 +103,7 @@ const ObservationCard: React.FC<ObservationCardProps> = ({ level, lastUpdated, l
                     </span>
                 </div>
                 <a
-                    href="https://www.phivolcs.dost.gov.ph/index.php/mayon-volcano-bulletin-menu"
+                    href={PHIVOLCS_BULLETIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors"

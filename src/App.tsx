@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { Smartphone, Download } from "lucide-react";
 import BackgroundLayout from "./components/BackgroundLayout";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
@@ -18,7 +19,7 @@ import useEvacuationCenters from "./hooks/useEvacuationCenters";
 import useRouting from "./hooks/useRouting";
 import useVolcanoAlert from "./hooks/useVolcanoAlert";
 import { calculateDistance } from "./utils/haversine";
-import { MAYON_COORDINATES, PDZ_RADIUS_KM } from "./utils/constants";
+import { MAYON_COORDINATES, PDZ_RADIUS_KM, PLAY_STORE_URL } from "./utils/constants";
 import type { EvacuationCenter } from "./types/evacuation";
 import { useLanguage } from "./i18n";
 
@@ -227,6 +228,26 @@ function App() {
         {/* Emergency Contacts */}
         <footer className="border-t border-white/[0.06] pt-8 pb-6">
           <EmergencyContacts />
+
+          {/* Android app */}
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card group mb-8 flex items-center gap-4 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 px-4 py-3.5 transition-all duration-200"
+          >
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 flex-shrink-0">
+              <Smartphone size={18} className="text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white">{t.getAndroidApp}</p>
+              <p className="text-[11px] text-slate-500 leading-tight">{t.androidAppSubtitle}</p>
+            </div>
+            <span className="flex items-center gap-1.5 flex-shrink-0 text-xs font-medium text-emerald-400 px-3 py-1.5 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+              <Download size={13} />
+              {t.install}
+            </span>
+          </a>
 
           <div className="text-center text-slate-600 text-sm border-t border-white/[0.05] pt-6">
             <p>
