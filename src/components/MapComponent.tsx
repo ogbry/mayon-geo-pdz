@@ -2,7 +2,12 @@ import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Circle, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { MAYON_COORDINATES, PDZ_RADIUS_KM } from "../utils/constants";
+import {
+    MAYON_COORDINATES,
+    PDZ_RADIUS_KM,
+    MAP_TILE_URL,
+    MAP_TILE_ATTRIBUTION,
+} from "../utils/constants";
 import type { EvacuationCenter, EvacuationCenterType } from "../types/evacuation";
 import type { RouteCoordinate } from "../hooks/useRouting";
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -116,8 +121,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 preferCanvas={true}
             >
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution={MAP_TILE_ATTRIBUTION}
+                    url={MAP_TILE_URL}
                 />
 
                 {/* Mayon Volcano Center and PDZ */}
